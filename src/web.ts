@@ -1,10 +1,10 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { SevenzipPlugin } from './definitions';
+import type { SevenzipPlugin, SevenzipOtions } from './definitions';
 
 export class SevenzipWeb extends WebPlugin implements SevenzipPlugin {
-  async echo(options: { value: string }): Promise<{ value: string }> {
-    console.log('ECHO', options);
-    return options;
-  }
+  async unzip(option: SevenzipOtions): Promise<boolean> {
+    console.log(option);
+    return true;
+   }
 }

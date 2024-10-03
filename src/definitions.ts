@@ -1,3 +1,6 @@
 export interface SevenzipPlugin {
-  echo(options: { value: string }): Promise<{ value: string }>;
+  unzip(options: SevenzipOtions): Promise<boolean>;
+}
+export interface SevenzipOtions {
+  fileURL: string;
 }

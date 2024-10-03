@@ -13,25 +13,36 @@ npx cap sync
 
 <docgen-index>
 
-* [`echo(...)`](#echo)
+* [`unzip(...)`](#unzip)
+* [Interfaces](#interfaces)
 
 </docgen-index>
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
 
-### echo(...)
+### unzip(...)
 
 ```typescript
-echo(options: { value: string; }) => Promise<{ value: string; }>
+unzip(options: SevenzipOtions) => Promise<boolean>
 ```
 
-| Param         | Type                            |
-| ------------- | ------------------------------- |
-| **`options`** | <code>{ value: string; }</code> |
+| Param         | Type                                                      |
+| ------------- | --------------------------------------------------------- |
+| **`options`** | <code><a href="#sevenzipotions">SevenzipOtions</a></code> |
 
-**Returns:** <code>Promise&lt;{ value: string; }&gt;</code>
+**Returns:** <code>Promise&lt;boolean&gt;</code>
 
 --------------------
+
+
+### Interfaces
+
+
+#### SevenzipOtions
+
+| Prop          | Type                |
+| ------------- | ------------------- |
+| **`fileURL`** | <code>string</code> |
 
 </docgen-api>
