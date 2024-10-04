@@ -14,7 +14,9 @@ npx cap sync
 <docgen-index>
 
 * [`unzip(...)`](#unzip)
+* [`clearProgressWatch(...)`](#clearprogresswatch)
 * [Interfaces](#interfaces)
+* [Type Aliases](#type-aliases)
 
 </docgen-index>
 
@@ -24,14 +26,28 @@ npx cap sync
 ### unzip(...)
 
 ```typescript
-unzip(options: SevenzipOtions) => Promise<boolean>
+unzip(options: SevenzipOtions, callback: WatchProgressCallback) => Promise<CallbackID>
 ```
 
-| Param         | Type                                                      |
-| ------------- | --------------------------------------------------------- |
-| **`options`** | <code><a href="#sevenzipotions">SevenzipOtions</a></code> |
+| Param          | Type                                                                    |
+| -------------- | ----------------------------------------------------------------------- |
+| **`options`**  | <code><a href="#sevenzipotions">SevenzipOtions</a></code>               |
+| **`callback`** | <code><a href="#watchprogresscallback">WatchProgressCallback</a></code> |
 
-**Returns:** <code>Promise&lt;boolean&gt;</code>
+**Returns:** <code>Promise&lt;string&gt;</code>
+
+--------------------
+
+
+### clearProgressWatch(...)
+
+```typescript
+clearProgressWatch(options: ClearWatchOptions) => Promise<void>
+```
+
+| Param         | Type                                                            |
+| ------------- | --------------------------------------------------------------- |
+| **`options`** | <code><a href="#clearwatchoptions">ClearWatchOptions</a></code> |
 
 --------------------
 
@@ -46,5 +62,25 @@ unzip(options: SevenzipOtions) => Promise<boolean>
 | **`fileURL`**   | <code>string</code> |
 | **`password`**  | <code>string</code> |
 | **`outputDir`** | <code>string</code> |
+
+
+#### ClearWatchOptions
+
+| Prop     | Type                                              |
+| -------- | ------------------------------------------------- |
+| **`id`** | <code><a href="#callbackid">CallbackID</a></code> |
+
+
+### Type Aliases
+
+
+#### WatchProgressCallback
+
+<code>(progress: number, fileName: string, err?: any): void</code>
+
+
+#### CallbackID
+
+<code>string</code>
 
 </docgen-api>

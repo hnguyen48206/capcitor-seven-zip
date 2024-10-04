@@ -11,21 +11,25 @@ var globalCall: CAPPluginCall? = nil
 public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     public func decoder(decoder: PLzmaSDK.Decoder, path: String, progress: Double) {
         //        print("Reader progress: \(progress) %")
-        // globalCall?.resolve([
-        //     "value": progress
-        // ])
+         globalCall?.resolve(
+           ["fileName":path, "progress":progress]
+         )
         self.notifyListeners("progressEvent", data: ["fileName":path, "progress":progress])
     }
     
     public let identifier = "SevenzipPlugin"
     public let jsName = "Sevenzip"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "unzip", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "unzip", returnType: CAPPluginReturnCallback),
+        CAPPluginMethod(name: "clearProgressWatch", returnType: CAPPluginReturnPromise),
+
     ]
+
     private let implementation = Sevenzip()
-    
+    private var callQueue = [String]()
     @objc func unzip(_ call: CAPPluginCall) {
-        // call.keepAlive = true
+        call.keepAlive = true
+        callQueue.append(call.callbackId)
         globalCall = call
         var filePath = call.getString("fileURL") ?? ""
         var outputDir = call.getString("outputDir") ?? ""
@@ -54,15 +58,42 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
             let opened = try decoder.open()
             let extracted = try decoder.extract(to: Path(((outputDir != "") ? outputDir : documentDir) ?? NSHomeDirectory()))
             
-            // call.keepAlive = false
+//             call.keepAlive = false
             
-            call.resolve([
+             call.resolve([
                 "value": true
             ])
+            if let saved_call = bridge?.savedCall(withID: call.callbackId) {
+                           call.reject(description)
+                           bridge?.releaseCall(call)
+           }
+            callQueue.removeAll(where: { $0 == call.callbackId})
         } catch {
-            print("Exception: \(error)")
+            let description = "\(error)"
+            print("Exception: \(description)")
             call.reject("Failed to Unzip")
+            if let saved_call = bridge?.savedCall(withID: call.callbackId) {
+                           call.reject(description)
+                           bridge?.releaseCall(call)
+           }
+            callQueue.removeAll(where: { $0 == call.callbackId})
+
         }
+    }
+    
+    
+    @objc func clearProgressWatch(_ call: CAPPluginCall) {
+        guard let callbackId = call.getString("id") else {
+            call.reject("Watch call id must be provided")
+            return
+        }
+
+        if let savedCall = bridge?.savedCall(withID: callbackId) {
+            bridge?.releaseCall(savedCall)
+        }
+
+        callQueue.removeAll(where: { $0 == callbackId})
+        call.resolve()
     }
 }
 
