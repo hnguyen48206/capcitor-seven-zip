@@ -17,7 +17,7 @@ let package = Package(
         .target(
             name: "SevenzipPlugin",
             dependencies: [
-                "PLzmaSDK",
+                .product(name: "PLzmaSDK", package: "PLzmaSDK"),
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm")
             ],

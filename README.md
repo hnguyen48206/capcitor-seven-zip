@@ -41,8 +41,10 @@ unzip(options: SevenzipOtions) => Promise<boolean>
 
 #### SevenzipOtions
 
-| Prop          | Type                |
-| ------------- | ------------------- |
-| **`fileURL`** | <code>string</code> |
+| Prop            | Type                |
+| --------------- | ------------------- |
+| **`fileURL`**   | <code>string</code> |
+| **`password`**  | <code>string</code> |
+| **`outputDir`** | <code>string</code> |
 
 </docgen-api>
