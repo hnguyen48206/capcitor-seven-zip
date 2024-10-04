@@ -1,0 +1,130 @@
+{
+  "api": {
+    "name": "SevenzipPlugin",
+    "slug": "sevenzipplugin",
+    "docs": "",
+    "tags": [],
+    "methods": [
+      {
+        "name": "unzip",
+        "signature": "(options: SevenzipOtions, callback: WatchProgressCallback) => Promise<CallbackID>",
+        "parameters": [
+          {
+            "name": "options",
+            "docs": "",
+            "type": "SevenzipOtions"
+          },
+          {
+            "name": "callback",
+            "docs": "",
+            "type": "WatchProgressCallback"
+          }
+        ],
+        "returns": "Promise<string>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [
+          "SevenzipOtions",
+          "WatchProgressCallback",
+          "CallbackID"
+        ],
+        "slug": "unzip"
+      },
+      {
+        "name": "clearProgressWatch",
+        "signature": "(options: ClearWatchOptions) => Promise<void>",
+        "parameters": [
+          {
+            "name": "options",
+            "docs": "",
+            "type": "ClearWatchOptions"
+          }
+        ],
+        "returns": "Promise<void>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [
+          "ClearWatchOptions"
+        ],
+        "slug": "clearprogresswatch"
+      }
+    ],
+    "properties": []
+  },
+  "interfaces": [
+    {
+      "name": "SevenzipOtions",
+      "slug": "sevenzipotions",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "fileURL",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string"
+        },
+        {
+          "name": "password",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string | undefined"
+        },
+        {
+          "name": "outputDir",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string | undefined"
+        }
+      ]
+    },
+    {
+      "name": "ClearWatchOptions",
+      "slug": "clearwatchoptions",
+      "docs": "",
+      "tags": [],
+      "methods": [],
+      "properties": [
+        {
+          "name": "id",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [
+            "CallbackID"
+          ],
+          "type": "CallbackID"
+        }
+      ]
+    }
+  ],
+  "enums": [],
+  "typeAliases": [
+    {
+      "name": "WatchProgressCallback",
+      "slug": "watchprogresscallback",
+      "docs": "",
+      "types": [
+        {
+          "text": "(progress: number, fileName: string, err?: any): void",
+          "complexTypes": []
+        }
+      ]
+    },
+    {
+      "name": "CallbackID",
+      "slug": "callbackid",
+      "docs": "",
+      "types": [
+        {
+          "text": "string",
+          "complexTypes": []
+        }
+      ]
+    }
+  ],
+  "pluginConfigs": []
+}
