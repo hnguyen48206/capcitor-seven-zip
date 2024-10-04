@@ -38,8 +38,6 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         
         do {
             let outputURL = (URL(fileURLWithPath: filePath)).deletingLastPathComponent().absoluteString
-            print("Input: \(filePath)  Output:\(outputURL)")
-            print("Root Application directory: \(NSHomeDirectory())")
             var documentDir = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first
             print("Document Application directory: \(documentDir)")
             
@@ -53,31 +51,28 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
             }
             if(outputDir != "" && documentDir != nil)
             {
-                documentDir = documentDir! + outputDir
+                outputDir = documentDir! + outputDir
             }
             let opened = try decoder.open()
+            print("Input: \(filePath)  Output:\(outputURL)")
+            print("Root Application directory: \(NSHomeDirectory())")
             let extracted = try decoder.extract(to: Path(((outputDir != "") ? outputDir : documentDir) ?? NSHomeDirectory()))
             
-//             call.keepAlive = false
-            
-             call.resolve([
-                "value": true
-            ])
+            // call.keepAlive = false
+
             if let saved_call = bridge?.savedCall(withID: call.callbackId) {
-                           call.reject(description)
                            bridge?.releaseCall(call)
            }
             callQueue.removeAll(where: { $0 == call.callbackId})
         } catch {
             let description = "\(error)"
             print("Exception: \(description)")
-            call.reject("Failed to Unzip")
+            call.reject(description)
+
             if let saved_call = bridge?.savedCall(withID: call.callbackId) {
-                           call.reject(description)
                            bridge?.releaseCall(call)
            }
             callQueue.removeAll(where: { $0 == call.callbackId})
-
         }
     }
     
