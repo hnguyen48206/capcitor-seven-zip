@@ -5,7 +5,7 @@ capcitor plugin to unzip 7z format
 ## Install
 
 ```bash
-npm i sevenziphn162
+npm i sevenzip
 npx cap sync
 ```
 
