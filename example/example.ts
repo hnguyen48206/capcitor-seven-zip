@@ -1,7 +1,6 @@
 import { Component, NgZone } from '@angular/core';
 import { FilePicker, PickedFile } from '@capawesome/capacitor-file-picker';
 import { Sevenzip } from 'sevenzip';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 
 @Component({
   selector: 'app-home',
@@ -14,7 +13,6 @@ export class HomePage {
   currentOut = '';
   callbackID = '';
   constructor(private _ngZone: NgZone) {
-    this.testFileSystem();
   }
   async pickFiles() {
     let result = await FilePicker.pickFiles({
@@ -93,19 +91,5 @@ export class HomePage {
     } catch (error) {
       console.log(error);
     }
-  }
-  async testFileSystem() {
-    const listFiles = async (path: string) => {
-      try {
-        const result = await Filesystem.readdir({
-          path: path,
-          directory: Directory.Documents,
-        });
-        console.log('Files:', result.files);
-      } catch (e) {
-        console.error('Unable to read dir', e);
-      }
-    };
-    listFiles('');
   }
 }
