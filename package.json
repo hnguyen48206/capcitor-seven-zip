@@ -1,5 +1,5 @@
 {
-  "name": "sevenzip",
+  "name": "sevenziphn162",
   "version": "0.0.1",
   "description": "capcitor plugin to unzip 7z format",
   "main": "dist/plugin.cjs.js",
