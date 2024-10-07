@@ -93,5 +93,6 @@ clearProgressWatch(options: ClearWatchOptions) => Promise<void>
 - Nếu truyền outputDir thì sẽ là subpath của path mặc định, ví dụ '/subthumuc/thumuc1' (lưu ý cần có / ở đầu).
 - Lưu ý là subDir này cần tạo trước và bảo đảm có tồn tại trước khi truyền vào unzip.
 
-(*) Trên Android, cần cấp quyền READ_EXTERNAL_STORAGE va WRITE_EXTERNAL_STORAGE. Ngoài ra có thể request permission ở runtime,
-bảo đảm đã có đủ quyền trước khi chạy unzip.
+(*) Trên Android, cần cấp quyền READ_EXTERNAL_STORAGE va WRITE_EXTERNAL_STORAGE trong permission. Ngoài ra có thể request permission ở runtime,
+bảo đảm đã có đủ quyền trước khi chạy unzip. Đồng thời trong tag <application> file Manifest, thêm vào 2 thuộc tính  android:largeHeap="true" (cho phép xử lý dung lượng lớn)
+android:requestLegacyExternalStorage="true" (cấp quyền truy cập external trên Android 10)
