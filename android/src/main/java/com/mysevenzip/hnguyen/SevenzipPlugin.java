@@ -61,62 +61,64 @@ public class SevenzipPlugin extends Plugin {
 
         //Tam chap nhan
         new Thread(() -> {
-            try (ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
-                 FileInputStream fis = new FileInputStream(pfd.getFileDescriptor());
-                 BufferedInputStream bis = new BufferedInputStream(fis);
-                 FileChannel fileChannel = fis.getChannel();
-                 SevenZFile sevenZFile = new SevenZFile(fileChannel)) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                try (ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
+                     FileInputStream fis = new FileInputStream(pfd.getFileDescriptor());
+                     BufferedInputStream bis = new BufferedInputStream(fis);
+                     FileChannel fileChannel = fis.getChannel();
+                     SevenZFile sevenZFile = new SevenZFile(fileChannel)) {
 
-                SevenZArchiveEntry entry;
-                long totalSize = 0;
-                while ((entry = sevenZFile.getNextEntry()) != null) {
-                    totalSize += entry.getSize();
-                }
+                    SevenZArchiveEntry entry;
+                    long totalSize = 0;
+                    while ((entry = sevenZFile.getNextEntry()) != null) {
+                        totalSize += entry.getSize();
+                    }
 
-                sevenZFile.close();
+                    sevenZFile.close();
 
-                try (ParcelFileDescriptor pfd2 = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
-                     FileInputStream fis2 = new FileInputStream(pfd2.getFileDescriptor());
-                     BufferedInputStream bis2 = new BufferedInputStream(fis2);
-                     FileChannel fileChannel2 = fis2.getChannel();
-                     SevenZFile sevenZFile2 = new SevenZFile(fileChannel2)) {
-                    long extractedSize = 0;
-                    int lastProgress = 0;
+                    try (ParcelFileDescriptor pfd2 = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
+                         FileInputStream fis2 = new FileInputStream(pfd2.getFileDescriptor());
+                         BufferedInputStream bis2 = new BufferedInputStream(fis2);
+                         FileChannel fileChannel2 = fis2.getChannel();
+                         SevenZFile sevenZFile2 = new SevenZFile(fileChannel2)) {
+                        long extractedSize = 0;
+                        int lastProgress = 0;
 
-                    while ((entry = sevenZFile2.getNextEntry()) != null) {
-                        if (entry.isDirectory()) {
-                            continue;
-                        }
-    
-                        File outFile = new File(finalOutputDir, entry.getName());
-                        outFile.getParentFile().mkdirs();
+                        while ((entry = sevenZFile2.getNextEntry()) != null) {
+                            if (entry.isDirectory()) {
+                                continue;
+                            }
+                            String itemName = entry.getName();
+                            File outFile = new File(finalOutputDir, itemName);
+                            outFile.getParentFile().mkdirs();
 
-                        try (FileOutputStream out = new FileOutputStream(outFile);
-                             BufferedOutputStream bos = new BufferedOutputStream(out, 32768)) {
-                            byte[] buffer = new byte[32768]; // Use a larger buffer size
-                            int len;
-                            while ((len = sevenZFile2.read(buffer)) > 0) {
-                                bos.write(buffer, 0, len);
-                                extractedSize += len;
-                                int progress = (int) ((extractedSize * 100) / totalSize);
-                                if (progress - lastProgress >= 5) {
-                                    lastProgress = progress;
-                                    JSObject progressUpdate = new JSObject();
-                                    progressUpdate.put("progress", progress);
-                                    progressUpdate.put("fileName", "");
-                                    notifyListeners("progressEvent", progressUpdate);
+                            try (FileOutputStream out = new FileOutputStream(outFile);
+                                 BufferedOutputStream bos = new BufferedOutputStream(out, 32768)) {
+                                byte[] buffer = new byte[32768]; // Use a larger buffer size
+                                int len;
+                                while ((len = sevenZFile2.read(buffer)) > 0) {
+                                    bos.write(buffer, 0, len);
+                                    extractedSize += len;
+                                    int progress = (int) ((extractedSize * 100) / totalSize);
+                                    if (progress - lastProgress >= 5) {
+                                        lastProgress = progress;
+                                        JSObject progressUpdate = new JSObject();
+                                        progressUpdate.put("progress", progress);
+                                        progressUpdate.put("fileName", itemName);
+                                        notifyListeners("progressEvent", progressUpdate);
+                                    }
+
                                 }
-
                             }
                         }
                     }
-                }
 
-                JSObject ret = new JSObject();
-                ret.put("status", "success");
-                call.resolve(ret);
-            } catch (IOException e) {
-                call.reject("Unzipping failed", e);
+                    JSObject ret = new JSObject();
+                    ret.put("status", "success");
+                    call.resolve(ret);
+                } catch (IOException e) {
+                    call.reject("Unzipping failed", e);
+                }
             }
         }).start();
 
