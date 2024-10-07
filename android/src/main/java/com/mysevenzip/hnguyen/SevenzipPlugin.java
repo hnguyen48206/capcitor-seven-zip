@@ -11,6 +11,7 @@ import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.ArrayList;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -24,21 +25,32 @@ import android.content.ContentResolver;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 
+import android.content.Context;
 
 @CapacitorPlugin(name = "Sevenzip")
 public class SevenzipPlugin extends Plugin {
     Logger logger = Logger.getAnonymousLogger();
+    private Context context;
 
     private Sevenzip implementation = new Sevenzip();
-
-    @PluginMethod
+    ArrayList<String> callQueue = new ArrayList<String>();
+    @Override
+    public void load() {
+    // Get the context
+        this.context = this.getActivity().getApplicationContext();
+    }
+    @PluginMethod(returnType = PluginMethod.RETURN_CALLBACK)
     public void unzip(PluginCall call) {
+        call.setKeepAlive(true);
+        callQueue.add(call.getCallbackId());
         String filePath = call.getString("fileURL") != null? call.getString("fileURL") : "";
         String outputDir = call.getString("outputDir") !=null? call.getString("outputDir") : "";
         String password = call.getString("password") !=null? call.getString("password") : "";
         System.out.println("FileInput. ------------------------------" + filePath);
 
         String documentDir = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS));
+        //If using app-specific Dir, there will be no space left error --> must use external dir for large files
+//        String documentDir = String.valueOf(context.getExternalFilesDir(null));
         System.out.println("Document Application directory: " + documentDir);
         if (outputDir != "" && documentDir != null) {
             outputDir = documentDir + outputDir;
@@ -58,7 +70,6 @@ public class SevenzipPlugin extends Plugin {
 
         String finalOutputDir = outputDir;
 
-
         //Tam chap nhan
         new Thread(() -> {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
@@ -66,7 +77,7 @@ public class SevenzipPlugin extends Plugin {
                      FileInputStream fis = new FileInputStream(pfd.getFileDescriptor());
                      BufferedInputStream bis = new BufferedInputStream(fis);
                      FileChannel fileChannel = fis.getChannel();
-                     SevenZFile sevenZFile = new SevenZFile(fileChannel)) {
+                     SevenZFile sevenZFile = new SevenZFile(fileChannel, password.toCharArray())) {
 
                     SevenZArchiveEntry entry;
                     long totalSize = 0;
@@ -80,9 +91,9 @@ public class SevenzipPlugin extends Plugin {
                          FileInputStream fis2 = new FileInputStream(pfd2.getFileDescriptor());
                          BufferedInputStream bis2 = new BufferedInputStream(fis2);
                          FileChannel fileChannel2 = fis2.getChannel();
-                         SevenZFile sevenZFile2 = new SevenZFile(fileChannel2)) {
+                         SevenZFile sevenZFile2 = new SevenZFile(fileChannel2, password.toCharArray())) {
                         long extractedSize = 0;
-                        int lastProgress = 0;
+                        float lastProgress = 0;
 
                         while ((entry = sevenZFile2.getNextEntry()) != null) {
                             if (entry.isDirectory()) {
@@ -99,13 +110,14 @@ public class SevenzipPlugin extends Plugin {
                                 while ((len = sevenZFile2.read(buffer)) > 0) {
                                     bos.write(buffer, 0, len);
                                     extractedSize += len;
-                                    int progress = (int) ((extractedSize * 100) / totalSize);
-                                    if (progress - lastProgress >= 5) {
+                                    float progress = (float) ((extractedSize * 100) / totalSize);
+                                    if (progress - lastProgress >= 2) {
                                         lastProgress = progress;
                                         JSObject progressUpdate = new JSObject();
-                                        progressUpdate.put("progress", progress);
+                                        progressUpdate.put("progress", progress/100);
                                         progressUpdate.put("fileName", itemName);
                                         notifyListeners("progressEvent", progressUpdate);
+                                        call.resolve(progressUpdate);
                                     }
 
                                 }
@@ -114,10 +126,12 @@ public class SevenzipPlugin extends Plugin {
                     }
 
                     JSObject ret = new JSObject();
-                    ret.put("status", "success");
-                    call.resolve(ret);
+                    callQueue.remove(call.getCallbackId());
+                    call.release(bridge);
                 } catch (IOException e) {
-                    call.reject("Unzipping failed", e);
+                    callQueue.remove(call.getCallbackId());
+                    call.release(bridge);
+                    call.reject(e.toString());
                 }
             }
         }).start();
@@ -211,5 +225,25 @@ public class SevenzipPlugin extends Plugin {
 //            }
 //        }).start();
 
+    }
+
+    @PluginMethod
+    public void clearProgressWatch(PluginCall call) {
+        String callbackId = call.getString("id");
+
+        if (callbackId != null) {
+//            PluginCall removed = watchingCalls.remove(callbackId);
+//            if (removed != null) {
+//                removed.release(bridge);
+//            }
+//
+//            if (watchingCalls.size() == 0) {
+//                implementation.clearLocationUpdates();
+//            }
+
+            call.resolve();
+        } else {
+            call.reject("Watch call id must be provided");
+        }
     }
 }
