@@ -86,7 +86,10 @@ public class SevenzipPlugin extends Plugin {
                     }
 
                     sevenZFile.close();
-
+                    pfd.close();
+                    bis.close();
+                    fis.close();
+                    fileChannel.close();
                     try (ParcelFileDescriptor pfd2 = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                          FileInputStream fis2 = new FileInputStream(pfd2.getFileDescriptor());
                          BufferedInputStream bis2 = new BufferedInputStream(fis2);
@@ -123,6 +126,11 @@ public class SevenzipPlugin extends Plugin {
                                 }
                             }
                         }
+                        sevenZFile2.close();
+                        pfd2.close();
+                        bis2.close();
+                        fis2.close();
+                        fileChannel2.close();
                     }
 
                     JSObject ret = new JSObject();
@@ -135,51 +143,6 @@ public class SevenzipPlugin extends Plugin {
                 }
             }
         }).start();
-
-//        new Thread(() -> {
-//            try (SevenZFile sevenZFile = new SevenZFile(new File(filePath))) {
-//                SevenZArchiveEntry entry;
-//                long totalSize = 0;
-//                while ((entry = sevenZFile.getNextEntry()) != null) {
-//                    totalSize += entry.getSize();
-//                }
-//
-//                sevenZFile.close();
-//
-//                try (SevenZFile sevenZFile2 = new SevenZFile(new File(filePath))) {
-//                    long extractedSize = 0;
-//                    while ((entry = sevenZFile2.getNextEntry()) != null) {
-//                        if (entry.isDirectory()) {
-//                            continue;
-//                        }
-//
-//                        File outFile = new File(finalOutputDir, entry.getName());
-//                        outFile.getParentFile().mkdirs();
-//
-//                        try (FileOutputStream out = new FileOutputStream(outFile)) {
-//                            byte[] buffer = new byte[1024];
-//                            int len;
-//                            while ((len = sevenZFile2.read(buffer)) > 0) {
-//                                out.write(buffer, 0, len);
-//                                extractedSize += len;
-//                                int progress = (int) ((extractedSize * 100) / totalSize);
-//                                JSObject progressUpdate = new JSObject();
-//                                progressUpdate.put("progress", progress);
-//                                progressUpdate.put("fileName", "");
-//                                notifyListeners("progressEvent", progressUpdate);
-//                            }
-//                        }
-//                    }
-//                }
-//
-//                JSObject ret = new JSObject();
-//                ret.put("status", "success");
-//                call.resolve(ret);
-//            } catch (IOException e) {
-//                logger.log(Level.SEVERE, "an exception was thrown", e);
-//                call.reject("Unzipping failed", e);
-//            }
-//        }).start();
 
 
 
