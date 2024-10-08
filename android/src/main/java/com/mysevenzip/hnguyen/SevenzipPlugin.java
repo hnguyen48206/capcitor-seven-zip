@@ -106,9 +106,10 @@ public class SevenzipPlugin extends Plugin {
                             File outFile = new File(finalOutputDir, itemName);
                             outFile.getParentFile().mkdirs();
 
+                            int bufferSize = 32 * 1024;
                             try (FileOutputStream out = new FileOutputStream(outFile);
-                                 BufferedOutputStream bos = new BufferedOutputStream(out, 32768)) {
-                                byte[] buffer = new byte[32768]; // Use a larger buffer size
+                                 BufferedOutputStream bos = new BufferedOutputStream(out, bufferSize)) {
+                                byte[] buffer = new byte[bufferSize]; // Use a larger buffer size
                                 int len;
                                 while ((len = sevenZFile2.read(buffer)) > 0) {
                                     bos.write(buffer, 0, len);
