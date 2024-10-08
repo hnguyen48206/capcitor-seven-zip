@@ -6,15 +6,17 @@ import PLzmaSDK
  * here: https://capacitorjs.com/docs/plugins/ios
  */
 var globalCall: CAPPluginCall? = nil
+var finalOutputDir = ""
 
 @objc(SevenzipPlugin)
 public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     public func decoder(decoder: PLzmaSDK.Decoder, path: String, progress: Double) {
         //        print("Reader progress: \(progress) %")
-         globalCall?.resolve(
-           ["fileName":path, "progress":progress]
-         )
-        self.notifyListeners("progressEvent", data: ["fileName":path, "progress":progress])
+        let name = finalOutputDir + "/" + path;
+        globalCall?.resolve(
+          ["fileName":name, "progress":progress]
+        )
+        self.notifyListeners("progressEvent", data: ["fileName": name, "progress":progress])
     }
     
     public let identifier = "SevenzipPlugin"
@@ -38,23 +40,29 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         
         do {
             let outputURL = (URL(fileURLWithPath: filePath)).deletingLastPathComponent().absoluteString
-            var documentDir = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first
+            var documentDir = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? ""
             print("Document Application directory: \(documentDir)")
+          
+            if(outputDir != "" && documentDir != nil)
+            {
+                outputDir = documentDir + outputDir
+            }
+            else
+            {
+                outputDir = documentDir
+            }
+            finalOutputDir = outputDir
             
             let archivePath = try Path(filePath)
             let archivePathInStream = try InStream(path: archivePath)
             let decoder = try Decoder(stream: archivePathInStream, fileType: .sevenZ, delegate: self)
-            
             if(password != "")
             {
                 try decoder.setPassword(password)
             }
-            if(outputDir != "" && documentDir != nil)
-            {
-                outputDir = documentDir! + outputDir
-            }
+           
             let opened = try decoder.open()
-            print("Input: \(filePath)  Output:\(outputURL)")
+            print("Input: \(filePath)  Output:\(finalOutputDir)")
             print("Root Application directory: \(NSHomeDirectory())")
             let extracted = try decoder.extract(to: Path(((outputDir != "") ? outputDir : documentDir) ?? NSHomeDirectory()))
             

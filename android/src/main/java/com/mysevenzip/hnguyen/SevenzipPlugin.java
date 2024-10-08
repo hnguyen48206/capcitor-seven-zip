@@ -78,7 +78,7 @@ public class SevenzipPlugin extends Plugin {
                      BufferedInputStream bis = new BufferedInputStream(fis);
                      FileChannel fileChannel = fis.getChannel();
                      SevenZFile sevenZFile = new SevenZFile(fileChannel, password.toCharArray())) {
-
+//                    logger.log(Level.INFO, sevenZFile.getEntries()); ;
                     SevenZArchiveEntry entry;
                     long totalSize = 0;
                     while ((entry = sevenZFile.getNextEntry()) != null) {
@@ -118,7 +118,7 @@ public class SevenzipPlugin extends Plugin {
                                         lastProgress = progress;
                                         JSObject progressUpdate = new JSObject();
                                         progressUpdate.put("progress", progress/100);
-                                        progressUpdate.put("fileName", itemName);
+                                        progressUpdate.put("fileName", outFile.getAbsolutePath());
                                         notifyListeners("progressEvent", progressUpdate);
                                         call.resolve(progressUpdate);
                                     }
