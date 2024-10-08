@@ -96,3 +96,5 @@ clearProgressWatch(options: ClearWatchOptions) => Promise<void>
 (*) Trên Android, cần cấp quyền READ_EXTERNAL_STORAGE va WRITE_EXTERNAL_STORAGE trong permission. Ngoài ra có thể request permission ở runtime,
 bảo đảm đã có đủ quyền trước khi chạy unzip. Đồng thời trong tag "application" file Manifest, thêm vào 2 thuộc tính  android:largeHeap="true" (cho phép xử lý dung lượng lớn)
 android:requestLegacyExternalStorage="true" (cấp quyền truy cập external trên Android 10)
+
+(*) Hỗ trợ iOS 13+ và Android 7+
