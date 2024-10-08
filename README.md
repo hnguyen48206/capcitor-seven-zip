@@ -89,7 +89,7 @@ clearProgressWatch(options: ClearWatchOptions) => Promise<void>
 # NOTE:
 
 (*) Method unzip nhận vào 3 input:
-- password và outputDir là optional. Mặc định, file giải nén sẽ lưu ở thư mục Document của App (trên iOS) -- Đây là thư mục public của app và sẽ bị xoá khi uninstall app. Trên Android, thư mục mặc định là thư mục Document của ExternalStorage -- Đây là thư mục public của device và không bị xoá khi uninstall app.
+- password và outputDir là optional. Mặc định, file giải nén sẽ lưu ở thư mục Document của App (trên iOS) -- Đây là thư mục public của app và sẽ bị xoá khi uninstall app. Trên Android, thư mục mặc định là thư mục Document của ExternalStorage -- Đây là thư mục public của device và không bị xoá khi uninstall app. (khi nhận info từ callback hoặc progressEvent thì fileName sẽ thể hiện absolute path nơi file giải nén ra được lưu)
 - Nếu truyền outputDir thì sẽ là subpath của path mặc định, ví dụ '/subthumuc/thumuc1' (lưu ý cần có / ở đầu).
 - Lưu ý là subDir này cần tạo trước và bảo đảm có tồn tại trước khi truyền vào unzip.
 
