@@ -47,6 +47,16 @@
           "ClearWatchOptions"
         ],
         "slug": "clearprogresswatch"
+      },
+      {
+        "name": "getDefaultPath",
+        "signature": "() => Promise<any>",
+        "parameters": [],
+        "returns": "Promise<any>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [],
+        "slug": "getdefaultpath"
       }
     ],
     "properties": []
@@ -79,6 +89,13 @@
           "docs": "",
           "complexTypes": [],
           "type": "string | undefined"
+        },
+        {
+          "name": "rmSourceFile",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "boolean | undefined"
         }
       ]
     },

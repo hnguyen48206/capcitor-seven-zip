@@ -15,6 +15,7 @@ npx cap sync
 
 * [`unzip(...)`](#unzip)
 * [`clearProgressWatch(...)`](#clearprogresswatch)
+* [`getDefaultPath()`](#getdefaultpath)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 
@@ -52,16 +53,28 @@ clearProgressWatch(options: ClearWatchOptions) => Promise<void>
 --------------------
 
 
+### getDefaultPath()
+
+```typescript
+getDefaultPath() => Promise<any>
+```
+
+**Returns:** <code>Promise&lt;any&gt;</code>
+
+--------------------
+
+
 ### Interfaces
 
 
 #### SevenzipOtions
 
-| Prop            | Type                |
-| --------------- | ------------------- |
-| **`fileURL`**   | <code>string</code> |
-| **`password`**  | <code>string</code> |
-| **`outputDir`** | <code>string</code> |
+| Prop               | Type                 |
+| ------------------ | -------------------- |
+| **`fileURL`**      | <code>string</code>  |
+| **`password`**     | <code>string</code>  |
+| **`outputDir`**    | <code>string</code>  |
+| **`rmSourceFile`** | <code>boolean</code> |
 
 
 #### ClearWatchOptions

@@ -5,11 +5,10 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import org.apache.commons.compress.archivers.ArchiveEntry;
+
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 
@@ -20,12 +19,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.channels.SeekableByteChannel;
-import android.content.ContentResolver;
+
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 
 import android.content.Context;
+import android.content.ContentResolver;
 
 @CapacitorPlugin(name = "Sevenzip")
 public class SevenzipPlugin extends Plugin {
@@ -34,6 +33,25 @@ public class SevenzipPlugin extends Plugin {
 
     private Sevenzip implementation = new Sevenzip();
     ArrayList<String> callQueue = new ArrayList<String>();
+
+    public void rmSrcFile(Uri fileUri) {
+        if (fileUri != null && fileUri.toString().startsWith("content://")) {
+            try {
+                context.grantUriPermission(context.getPackageName(), fileUri, this.getActivity().getIntent().FLAG_GRANT_WRITE_URI_PERMISSION);
+                ContentResolver contentResolver = context.getContentResolver();
+                int rowsDeleted = contentResolver.delete(fileUri, null, null);
+                if (rowsDeleted > 0) {
+                    System.out.println("File deleted successfully.");
+                } else {
+                    System.out.println("No file found to delete.");
+                }
+            } catch (Exception e) {
+                System.out.println("Error deleting file: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Invalid URI: " + fileUri);
+        }
+    }
     @Override
     public void load() {
     // Get the context
@@ -41,11 +59,13 @@ public class SevenzipPlugin extends Plugin {
     }
     @PluginMethod(returnType = PluginMethod.RETURN_CALLBACK)
     public void unzip(PluginCall call) {
+
         call.setKeepAlive(true);
         callQueue.add(call.getCallbackId());
         String filePath = call.getString("fileURL") != null? call.getString("fileURL") : "";
         String outputDir = call.getString("outputDir") !=null? call.getString("outputDir") : "";
         String password = call.getString("password") !=null? call.getString("password") : "";
+        Boolean removeSrcFile = call.getBoolean("rmSourceFile")!=null? call.getBoolean("rmSourceFile"): true;
         System.out.println("FileInput. ------------------------------" + filePath);
 
         String documentDir = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS));
@@ -84,7 +104,6 @@ public class SevenzipPlugin extends Plugin {
                     while ((entry = sevenZFile.getNextEntry()) != null) {
                         totalSize += entry.getSize();
                     }
-
                     sevenZFile.close();
                     pfd.close();
                     bis.close();
@@ -132,6 +151,14 @@ public class SevenzipPlugin extends Plugin {
                         bis2.close();
                         fis2.close();
                         fileChannel2.close();
+                        System.out.println("Co delete file goc hay ko " + removeSrcFile);
+
+                        if(removeSrcFile)
+                        {
+                            System.out.println("Co delete file goc hay ko " + removeSrcFile);
+
+                            rmSrcFile(fileUri);
+                        }
                     }
 
                     JSObject ret = new JSObject();
@@ -209,5 +236,12 @@ public class SevenzipPlugin extends Plugin {
         } else {
             call.reject("Watch call id must be provided");
         }
+    }
+
+    @PluginMethod
+    public void getDefaultPath(PluginCall call) {
+        JSObject res = new JSObject();
+        res.put("path",String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)));
+        call.resolve(res);
     }
 }

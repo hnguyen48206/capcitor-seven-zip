@@ -7,7 +7,10 @@ var capacitorSevenzip = (function (exports, core) {
 
     class SevenzipWeb extends core.WebPlugin {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        clearProgressWatch(_options) {
+        async clearProgressWatch(_options) {
+            throw new Error('Method not implemented.');
+        }
+        async getDefaultPath() {
             throw new Error('Method not implemented.');
         }
         async unzip(

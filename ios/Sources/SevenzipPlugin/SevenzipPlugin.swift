@@ -10,6 +10,24 @@ var finalOutputDir = ""
 
 @objc(SevenzipPlugin)
 public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
+    func deleteFile(at path: String) {
+    print("File to delete: \(path) -----------------------------")
+
+    let fileManager = FileManager.default
+    let fileURL = URL(fileURLWithPath: path)
+
+    do {
+    if fileManager.fileExists(atPath: path) {
+    try fileManager.removeItem(at: fileURL)
+    print("File deleted successfully.")
+    } else {
+    print("File does not exist at path: \(path)")
+    }
+    } catch let error as NSError {
+    print("Error deleting file: \(error.localizedDescription)")
+    }
+    }
+
     public func decoder(decoder: PLzmaSDK.Decoder, path: String, progress: Double) {
         //        print("Reader progress: \(progress) %")
         let name = finalOutputDir + "/" + path;
@@ -24,6 +42,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "unzip", returnType: CAPPluginReturnCallback),
         CAPPluginMethod(name: "clearProgressWatch", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getDefaultPath", returnType: CAPPluginReturnPromise)
 
     ]
 
@@ -33,6 +52,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         call.keepAlive = true
         callQueue.append(call.callbackId)
         globalCall = call
+        let rmSourceFile = call.getBool("rmSourceFile") ?? false
         var filePath = call.getString("fileURL") ?? ""
         var outputDir = call.getString("outputDir") ?? ""
         var password = call.getString("password") ?? ""
@@ -72,6 +92,10 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
                            bridge?.releaseCall(call)
            }
             callQueue.removeAll(where: { $0 == call.callbackId})
+            if(rmSourceFile)
+            {
+                deleteFile(at: filePath)
+            }
         } catch {
             let description = "\(error)"
             print("Exception: \(description)")
@@ -97,6 +121,10 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
 
         callQueue.removeAll(where: { $0 == callbackId})
         call.resolve()
+    }
+
+    @objc func getDefaultPath(_ call: CAPPluginCall) {
+        call.resolve(["path":NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? NSHomeDirectory()])
     }
 }
 
