@@ -52,6 +52,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         call.keepAlive = true
         callQueue.append(call.callbackId)
         globalCall = call
+        let isLocalAsset = call.getBool("isLocalAsset") ?? false
         let rmSourceFile = call.getBool("rmSourceFile") ?? false
         var filePath = call.getString("fileURL") ?? ""
         var outputDir = call.getString("outputDir") ?? ""

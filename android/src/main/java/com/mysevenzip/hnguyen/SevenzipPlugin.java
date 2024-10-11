@@ -110,7 +110,7 @@ public class SevenzipPlugin extends Plugin {
         String outputDir = call.getString("outputDir") != null ? call.getString("outputDir") : "";
         String password = call.getString("password") != null ? call.getString("password") : "";
         Boolean removeSrcFile = call.getBoolean("rmSourceFile") != null ? call.getBoolean("rmSourceFile") : false;
-        Boolean isLocalAsset = call.getBoolean("isLocalAsset") != null ? call.getBoolean("isLocalAsset") : true;
+        Boolean isLocalAsset = call.getBoolean("isLocalAsset") != null ? call.getBoolean("isLocalAsset") : false;
 //        Boolean isLocalAsset = true;
 
         System.out.println("FileInput. ------------------------------" + filePath);
@@ -159,7 +159,7 @@ public class SevenzipPlugin extends Plugin {
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
                             try (
                                     SevenZFile sevenZFile = new SevenZFile(tmp7zFile, password.toCharArray())) {
-//                    logger.log(Level.INFO, sevenZFile.getEntries()); ;
+                                //logger.log(Level.INFO, sevenZFile.getEntries()); ;
                                 SevenZArchiveEntry entry;
                                 long totalSize = 0;
                                 while ((entry = sevenZFile.getNextEntry()) != null) {
@@ -192,15 +192,16 @@ public class SevenzipPlugin extends Plugin {
                                                     bos.write(buffer, 0, len);
                                                     extractedSize += len;
                                                     float progress = (float) ((extractedSize * 100) / totalSize);
-
                                                     lastProgress = progress;
-                                                    JSObject progressUpdate = new JSObject();
-                                                    progressUpdate.put("progress", progress / 100);
-                                                    progressUpdate.put("fileName", outFile.getAbsolutePath());
-                                                    notifyListeners("progressEvent", progressUpdate);
-                                                    call.resolve(progressUpdate);
-
-                                                    System.out.println("DBProgress " + totalSize + " " + lastProgress);
+                                                    if((progress - lastProgress)>=2 || ((100 - lastProgress) <=2))
+                                                    {
+                                                        JSObject progressUpdate = new JSObject();
+                                                        progressUpdate.put("progress", progress / 100);
+                                                        progressUpdate.put("fileName", outFile.getAbsolutePath());
+                                                        notifyListeners("progressEvent", progressUpdate);
+                                                        call.resolve(progressUpdate);
+                                                        System.out.println("DBProgress " + totalSize + " " + lastProgress);
+                                                    }
 
                                                 }
                                             }
