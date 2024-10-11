@@ -12,5 +12,6 @@ export interface SevenzipOtions {
     password?: string;
     outputDir?: string;
     rmSourceFile?: boolean;
+    isLocalAsset?: boolean;
 }
 export declare type CallbackID = string;

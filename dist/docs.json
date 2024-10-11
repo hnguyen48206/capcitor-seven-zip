@@ -96,6 +96,13 @@
           "docs": "",
           "complexTypes": [],
           "type": "boolean | undefined"
+        },
+        {
+          "name": "isLocalAsset",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "boolean | undefined"
         }
       ]
     },

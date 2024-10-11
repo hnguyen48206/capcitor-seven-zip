@@ -53,6 +53,7 @@ dependencies {
     implementation project(':capacitor-android')
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation 'org.apache.commons:commons-compress:1.21'
+    implementation("commons-io:commons-io:2.5")
     implementation 'org.tukaani:xz:1.9'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
