@@ -103,6 +103,13 @@
           "docs": "",
           "complexTypes": [],
           "type": "boolean | undefined"
+        },
+        {
+          "name": "sqlLiteDBLocationConfig",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "string | undefined"
         }
       ]
     },

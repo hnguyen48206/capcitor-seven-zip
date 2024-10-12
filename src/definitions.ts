@@ -15,6 +15,7 @@ export interface SevenzipOtions {
   outputDir?: string;
   rmSourceFile?: boolean;
   isLocalAsset?: boolean;
+  sqlLiteDBLocationConfig?: string;
 }
 
 export type CallbackID = string;
