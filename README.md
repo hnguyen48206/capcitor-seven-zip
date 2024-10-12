@@ -117,7 +117,7 @@ getDefaultPath() => Promise<any>
 - Lúc này fileURL sẽ là relative path của file archive trong asset folder. Ví dụ, ở project ionic đang lưu là assets/data/test.7z (trong đó assests là root path) thì truyền vào gía trị là 'data/test.7z'
 - rmSourceFile không hoạt động vì lúc này file gốc là asset binary của app (read-only)
 - outputDir không hoạt động vì không custom thư mục này (trên Android).
-- Đối với iOS, ***sqlLiteDBLocationConfig*** cần truyền vào giá trị như giá trị đã cấu hình cho ***iosDatabaseLocation*** của plugin SQLLite. Lưu ý là thư mục cấu hình này ***iosDatabaseLocation*** cần bảo đảm đã tồn tại trước khi gọi unzip. 
+- Đối với iOS, tham số ***sqlLiteDBLocationConfig*** cần truyền vào giá trị như giá trị đã cấu hình cho ***iosDatabaseLocation*** của plugin SQLLite. Lưu ý là thư mục cấu hình này ***iosDatabaseLocation*** cần bảo đảm đã tồn tại trước khi gọi unzip. 
 - Thư mục giải nén ra trên Android là thư mục ko thể truy cập bằng FileSystem. Là thư mục DB dành riêng của app. Chỉ có thể truy cập bằng DB apis (hoặc thư viện như sql lite viết sẵn)
 
 (*) Trên Android, cần cấp quyền READ_EXTERNAL_STORAGE va WRITE_EXTERNAL_STORAGE trong permission. Ngoài ra có thể request permission ở runtime,
