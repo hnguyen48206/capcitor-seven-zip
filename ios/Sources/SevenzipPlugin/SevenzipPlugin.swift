@@ -29,12 +29,26 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     }
 
     public func decoder(decoder: PLzmaSDK.Decoder, path: String, progress: Double) {
-        //        print("Reader progress: \(progress) %")
-        let name = finalOutputDir + "/" + path;
-        globalCall?.resolve(
-          ["fileName":name, "progress":progress]
-        )
-        self.notifyListeners("progressEvent", data: ["fileName": name, "progress":progress])
+                print("Reader progress: \(progress) %")
+        
+        if((1 - progress) < 0.1)
+        {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                let name = finalOutputDir + "/" + path;
+                globalCall?.resolve(
+                  ["fileName":name, "progress":progress]
+                )
+                self.notifyListeners("progressEvent", data: ["fileName": name, "progress":progress])            }
+        }
+        else
+        {
+            let name = finalOutputDir + "/" + path;
+            globalCall?.resolve(
+              ["fileName":name, "progress":progress]
+            )
+            self.notifyListeners("progressEvent", data: ["fileName": name, "progress":progress])
+        }
+      
     }
     
     public let identifier = "SevenzipPlugin"

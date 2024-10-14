@@ -105,7 +105,7 @@ getDefaultPath() => Promise<any>
 
 (*) Trường hợp sử dụng lib như một thư viện giải nén 7z generic (sử dụng file trong FileSystem)
 
-- fileURL là field bắt buộc, ở dạng absolute path.  
+- fileURL là field bắt buộc, ở dạng absolute path (protocol 'file://' cho iOS và 'content://' cho Android).  
 - password, outputDir, rmSourceFile là optional. Mặc định, file giải nén sẽ lưu ở thư mục Document của App (trên iOS) -- Đây là thư mục public của app và sẽ bị xoá khi uninstall app. Trên Android, thư mục mặc định là thư mục Document của ExternalStorage -- Đây là thư mục public của device và không bị xoá khi uninstall app. (khi nhận info từ callback hoặc progressEvent thì fileName sẽ thể hiện absolute path nơi file giải nén ra được lưu)
 - Nếu truyền outputDir thì sẽ là subpath của path mặc định, ví dụ '/subthumuc/thumuc1' (lưu ý cần có / ở đầu).
 - Lưu ý là subDir này cần tạo trước và bảo đảm có tồn tại trước khi truyền vào unzip.
@@ -116,9 +116,9 @@ getDefaultPath() => Promise<any>
 
 - Lúc này fileURL sẽ là relative path của file archive trong asset folder. Ví dụ, ở project ionic đang lưu là assets/data/test.7z (trong đó assests là root path) thì truyền vào gía trị là 'data/test.7z'
 - rmSourceFile không hoạt động vì lúc này file gốc là asset binary của app (read-only)
-- outputDir không hoạt động vì không custom thư mục này (trên Android).
-- Đối với iOS, tham số ***sqlLiteDBLocationConfig*** cần truyền vào giá trị như giá trị đã cấu hình cho ***iosDatabaseLocation*** của plugin SQLLite. Lưu ý là thư mục cấu hình này ***iosDatabaseLocation*** cần bảo đảm đã tồn tại trước khi gọi unzip. 
-- Thư mục giải nén ra trên Android là thư mục ko thể truy cập bằng FileSystem. Là thư mục DB dành riêng của app. Chỉ có thể truy cập bằng DB apis (hoặc thư viện như sql lite viết sẵn)
+- outputDir không hoạt động vì không custom thư mục này (dùng theo SQLLite plugin).
+- Đối với iOS, tham số ***sqlLiteDBLocationConfig*** cần truyền vào giá trị như giá trị đã cấu hình cho ***iosDatabaseLocation*** của plugin SQLLite. Lưu ý là thư mục cấu hình này ***iosDatabaseLocation*** cần bảo đảm đã tồn tại trước khi gọi unzip (nếu ko unzip tuy thành công nhưng sẽ ko move file sang thư mục cần được). Giá trị Default của SQLLite đặt thư mục này là Document.
+- Thư mục giải nén ra trên Android là thư mục ko thể truy cập bằng FileSystem. Là thư mục DB dành riêng của app. Chỉ có thể truy cập bằng DB apis (hoặc dùng thư viện viết sẵn như SQLLite).
 
 (*) Trên Android, cần cấp quyền READ_EXTERNAL_STORAGE va WRITE_EXTERNAL_STORAGE trong permission. Ngoài ra có thể request permission ở runtime,
 bảo đảm đã có đủ quyền trước khi chạy unzip. Đồng thời trong tag "application" file Manifest, thêm vào 2 thuộc tính  android:largeHeap="true" (cho phép xử lý dung lượng lớn)
