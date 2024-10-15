@@ -193,7 +193,7 @@ public class SevenzipPlugin extends Plugin {
                                                     extractedSize += len;
                                                     float progress = (float) ((extractedSize * 100) / totalSize);
 
-                                                    if((progress - lastProgress)>1 || ((100 - progress) <=2))
+                                                    if(progress > 2 && ((progress - lastProgress) > 1 || ((100 - progress) <=2)))
                                                     {
 
                                                         JSObject progressUpdate = new JSObject();
@@ -202,8 +202,8 @@ public class SevenzipPlugin extends Plugin {
                                                         notifyListeners("progressEvent", progressUpdate);
                                                         call.resolve(progressUpdate);
                                                         System.out.println("DBProgress " + totalSize + " " + progress);
+                                                        lastProgress = progress;
                                                     }
-                                                    lastProgress = progress;
 
                                                 }
                                             }
@@ -211,12 +211,14 @@ public class SevenzipPlugin extends Plugin {
                                         } else {
                                             extractedSize += entry.getSize();
                                             float progress = (float) ((extractedSize * 100) / totalSize);
-                                            lastProgress = progress;
-                                            JSObject progressUpdate = new JSObject();
-                                            progressUpdate.put("progress", progress / 100);
-                                            progressUpdate.put("fileName", "");
-                                            notifyListeners("progressEvent", progressUpdate);
-                                            call.resolve(progressUpdate);
+                                            if((progress - lastProgress) > 0.5){
+                                                JSObject progressUpdate = new JSObject();
+                                                progressUpdate.put("progress", progress / 100);
+                                                progressUpdate.put("fileName", "");
+                                                lastProgress = progress;
+                                                notifyListeners("progressEvent", progressUpdate);
+                                                call.resolve(progressUpdate);
+                                            }
                                         }
 
                                     }
