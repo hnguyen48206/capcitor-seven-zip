@@ -192,16 +192,18 @@ public class SevenzipPlugin extends Plugin {
                                                     bos.write(buffer, 0, len);
                                                     extractedSize += len;
                                                     float progress = (float) ((extractedSize * 100) / totalSize);
-                                                    lastProgress = progress;
-                                                    if((progress - lastProgress)>=2 || ((100 - lastProgress) <=2))
+
+                                                    if((progress - lastProgress)>=2 || ((100 - progress) <=2))
                                                     {
+
                                                         JSObject progressUpdate = new JSObject();
                                                         progressUpdate.put("progress", progress / 100);
                                                         progressUpdate.put("fileName", outFile.getAbsolutePath());
                                                         notifyListeners("progressEvent", progressUpdate);
                                                         call.resolve(progressUpdate);
-                                                        System.out.println("DBProgress " + totalSize + " " + lastProgress);
+                                                        System.out.println("DBProgress " + totalSize + " " + progress);
                                                     }
+                                                    lastProgress = progress;
 
                                                 }
                                             }
