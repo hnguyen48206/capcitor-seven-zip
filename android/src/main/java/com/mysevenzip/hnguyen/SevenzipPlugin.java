@@ -193,7 +193,7 @@ public class SevenzipPlugin extends Plugin {
                                                     extractedSize += len;
                                                     float progress = (float) ((extractedSize * 100) / totalSize);
 
-                                                    if((progress - lastProgress)>=2 || ((100 - progress) <=2))
+                                                    if((progress - lastProgress)>1 || ((100 - progress) <=2))
                                                     {
 
                                                         JSObject progressUpdate = new JSObject();
