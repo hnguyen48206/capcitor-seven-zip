@@ -199,7 +199,7 @@ public class SevenzipPlugin extends Plugin {
                                                         JSObject progressUpdate = new JSObject();
                                                         progressUpdate.put("progress", progress / 100);
                                                         progressUpdate.put("fileName", outFile.getAbsolutePath());
-                                                        notifyListeners("progressEvent", progressUpdate);
+//                                                        notifyListeners("progressEvent", progressUpdate);
                                                         call.resolve(progressUpdate);
                                                         System.out.println("DBProgress " + totalSize + " " + progress);
                                                         lastProgress = progress;
@@ -216,7 +216,7 @@ public class SevenzipPlugin extends Plugin {
                                                 progressUpdate.put("progress", progress / 100);
                                                 progressUpdate.put("fileName", "");
                                                 lastProgress = progress;
-                                                notifyListeners("progressEvent", progressUpdate);
+//                                                notifyListeners("progressEvent", progressUpdate);
                                                 call.resolve(progressUpdate);
                                             }
                                         }
@@ -234,14 +234,16 @@ public class SevenzipPlugin extends Plugin {
                                 JSObject ret = new JSObject();
                                 callQueue.remove(call.getCallbackId());
                                 call.release(bridge);
+
                             } catch (IOException e) {
                                 callQueue.remove(call.getCallbackId());
                                 call.release(bridge);
                                 call.reject(e.toString());
                             }
                         }
-                    }).start();
+                                            tmp7zFile.delete();
 
+                    }).start();
                 } catch (IOException e) {
                     callQueue.remove(call.getCallbackId());
                     call.release(bridge);
