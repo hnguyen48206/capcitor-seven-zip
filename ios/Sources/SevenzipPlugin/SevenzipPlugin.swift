@@ -29,16 +29,19 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     }
 
     public func decoder(decoder: PLzmaSDK.Decoder, path: String, progress: Double) {
-                print("Reader progress: \(progress) %")
+                print("Reader progress: \(progress)")
         
-        if((1 - progress) < 0.1)
+        if(self.isFromLocalAssetExtraction)
         {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            if((1 - progress) >= 0.1)
+            {
                 let name = finalOutputDir + "/" + path;
                 globalCall?.resolve(
                   ["fileName":name, "progress":progress]
                 )
-                self.notifyListeners("progressEvent", data: ["fileName": name, "progress":progress])            }
+                self.notifyListeners("progressEvent", data: ["fileName": name, "progress":progress])
+            }
+          
         }
         else
         {
@@ -60,6 +63,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
 
     ]
 
+    private var isFromLocalAssetExtraction = false
     private var hasLocalDBInit = false
     private var databaseLocation = "Documents"
     
@@ -147,6 +151,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         
         if(isLocalAsset)
         {
+            isFromLocalAssetExtraction = true
             //Init SQLLite DB Location if not
             if(!hasLocalDBInit)
             {
@@ -186,10 +191,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
                     
                     // call.keepAlive = false
                     
-                    if let saved_call = bridge?.savedCall(withID: call.callbackId) {
-                        bridge?.releaseCall(call)
-                    }
-                    callQueue.removeAll(where: { $0 == call.callbackId})
+                   
                     
                     //Loop through extracted DBs and move to SQLLite Location
                     let enumerator = FileManager.default.enumerator(atPath: finalOutputDir.relativePath)
@@ -219,6 +221,18 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
 //                           }
 
                        }
+                    
+                    //Fire the lase noti for moving files
+                    call.resolve(
+                      ["fileName":"", "progress":1]
+                    )
+                    notifyListeners("progressEvent", data: ["fileName": "", "progress":1])
+                    
+                    if let saved_call = bridge?.savedCall(withID: call.callbackId) {
+                        bridge?.releaseCall(call)
+                    }
+                    callQueue.removeAll(where: { $0 == call.callbackId})
+                    
                     //check If target Folder has the DB
                     let finalTarget = FileManager.default.enumerator(atPath: try getFolderURL(folderPath: databaseLocation).absoluteString)
                        while let element = enumerator?.nextObject() as? String {
@@ -246,7 +260,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
                 callQueue.removeAll(where: { $0 == call.callbackId})
             }
 
-            
+            isFromLocalAssetExtraction = false
         }
         else
         {
