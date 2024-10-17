@@ -101,6 +101,12 @@ public class SevenzipPlugin extends Plugin {
         return true;
     }
 
+    private boolean checkPercentInterval(float current )
+    {
+        int intValue = (int) current;
+        return (current - 19 == 1) || (current - 39 == 1) || (current - 59 == 1) || (current - 79 == 1);
+    }
+
     @PluginMethod(returnType = PluginMethod.RETURN_CALLBACK)
     public void unzip(PluginCall call) {
 
@@ -147,30 +153,32 @@ public class SevenzipPlugin extends Plugin {
                 // Process the input stream
                 System.out.println("ASSET FOUND---------------------------------------: ");
                 try {
-                    AssetManager mngr = context.getAssets();
-                    String itemList[] = mngr.list("");
-                    for (String log : itemList) {
-                        System.out.println("Asset File ----- " + log);
-                    }
+//                    AssetManager mngr = context.getAssets();
+//                    String itemList[] = mngr.list("");
+//                    for (String log : itemList) {
+//                        System.out.println("Asset File ----- " + log);
+//                    }
                     File tmp7zFile = createTempFileFromInputStream(inputStream);
 
                     new Thread(() -> {
 
                         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                            try (
-                                    SevenZFile sevenZFile = new SevenZFile(tmp7zFile, password.toCharArray())) {
+                            try (SevenZFile sevenZFile = new SevenZFile(tmp7zFile, password.toCharArray())) {
                                 //logger.log(Level.INFO, sevenZFile.getEntries()); ;
                                 SevenZArchiveEntry entry;
                                 long totalSize = 0;
-                                while ((entry = sevenZFile.getNextEntry()) != null) {
-                                    totalSize += entry.getSize();
+                                var Meta = sevenZFile.getEntries();
+                                for (SevenZArchiveEntry element : Meta)
+                                {
+                                    System.out.print(element.getName());
+                                    totalSize += element.getSize();
                                 }
-                                sevenZFile.close();
-                                try (SevenZFile sevenZFile2 = new SevenZFile(tmp7zFile, password.toCharArray())) {
+
+                                try {
                                     long extractedSize = 0;
                                     float lastProgress = 0;
 
-                                    while ((entry = sevenZFile2.getNextEntry()) != null) {
+                                    while ((entry = sevenZFile.getNextEntry()) != null) {
                                         if (entry.isDirectory()) {
                                             continue;
                                         }
@@ -188,7 +196,7 @@ public class SevenzipPlugin extends Plugin {
                                                  BufferedOutputStream bos = new BufferedOutputStream(out, bufferSize)) {
                                                 byte[] buffer = new byte[bufferSize]; // Use a larger buffer size
                                                 int len;
-                                                while ((len = sevenZFile2.read(buffer)) > 0) {
+                                                while ((len = sevenZFile.read(buffer)) > 0) {
                                                     bos.write(buffer, 0, len);
                                                     extractedSize += len;
                                                     float progress = (float) ((extractedSize * 100) / totalSize);
@@ -204,7 +212,10 @@ public class SevenzipPlugin extends Plugin {
                                                         System.out.println("DBProgress " + totalSize + " " + progress);
                                                         lastProgress = progress;
                                                     }
-
+                                                    if(checkPercentInterval(progress))
+                                                    {
+                                                        Thread.yield();
+                                                    }
                                                 }
                                             }
                                             System.out.println("DB NAME---------------------------------------: " + outFile.getAbsolutePath());
@@ -222,32 +233,26 @@ public class SevenzipPlugin extends Plugin {
                                         }
 
                                     }
-                                    sevenZFile2.close();
-
-//                                    if (removeSrcFile) {
-//                                        System.out.println("Co delete file goc hay ko " + removeSrcFile);
-//
-//                                        rmSrcFile(fileUri);
-//                                    }
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
                                 }
-
-                                JSObject ret = new JSObject();
+                                sevenZFile.close();
+                                inputStream.close();
                                 callQueue.remove(call.getCallbackId());
                                 call.release(bridge);
 
-                            } catch (IOException e) {
+                            } catch (Throwable e) {
                                 callQueue.remove(call.getCallbackId());
                                 call.release(bridge);
-                                call.reject(e.toString());
+                                call.reject(e.getMessage());
                             }
                         }
-                                            tmp7zFile.delete();
-
+                            tmp7zFile.delete();
                     }).start();
-                } catch (IOException e) {
+                } catch (Throwable e) {
                     callQueue.remove(call.getCallbackId());
                     call.release(bridge);
-                    call.reject(e.toString());
+                    call.reject(e.getMessage());
                 }
             } else {
                 msg = "ASSET NOT FOUND---------------------------------------: " + filePath;
@@ -330,13 +335,12 @@ public class SevenzipPlugin extends Plugin {
                             }
                         }
 
-                        JSObject ret = new JSObject();
                         callQueue.remove(call.getCallbackId());
                         call.release(bridge);
-                    } catch (IOException e) {
+                    } catch (Throwable e) {
                         callQueue.remove(call.getCallbackId());
                         call.release(bridge);
-                        call.reject(e.toString());
+                        call.reject(e.getMessage());
                     }
                 }
             }).start();
