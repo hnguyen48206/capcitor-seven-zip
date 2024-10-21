@@ -42,7 +42,7 @@ public class SevenzipPlugin extends Plugin {
     private Context context;
     private Object lock = new Object();
     private int lastSleep = 0;
-    private int sleepTime = 0;
+    private int sleepTime = 100;
     private CompletableFuture<Boolean> currentUnzippingProcess;
     private Thread currentThread;
     ArrayList<String> callQueue = new ArrayList<String>();
@@ -128,7 +128,7 @@ public class SevenzipPlugin extends Plugin {
         String password = call.getString("password") != null ? call.getString("password") : "";
         Boolean removeSrcFile = call.getBoolean("rmSourceFile") != null ? call.getBoolean("rmSourceFile") : false;
         Boolean isLocalAsset = call.getBoolean("isLocalAsset") != null ? call.getBoolean("isLocalAsset") : false;
-        sleepTime = call.getInt("sleepTime") != null ? call.getInt("sleepTime") : 0;
+        sleepTime = call.getInt("sleepTime") != null ? call.getInt("sleepTime") : sleepTime;
 
         System.out.println("FileInput. ------------------------------" + filePath);
         String documentDir = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS));
@@ -171,108 +171,6 @@ public class SevenzipPlugin extends Plugin {
 //                    }
                     File tmp7zFile = createTempFileFromInputStream(inputStream);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//                        currentUnzippingProcess = CompletableFuture.supplyAsync(() -> {
-//                            // method call or code to be async.
-//                                var result = true;
-//                                try (SevenZFile sevenZFile = new SevenZFile(tmp7zFile, password.toCharArray())) {
-//                                    //logger.log(Level.INFO, sevenZFile.getEntries()); ;
-//                                    SevenZArchiveEntry entry;
-//                                    long totalSize = 0;
-//                                    var Meta = sevenZFile.getEntries();
-//                                    for (SevenZArchiveEntry element : Meta)
-//                                    {
-//                                        System.out.print(element.getName());
-//                                        totalSize += element.getSize();
-//                                    }
-//
-//                                    try {
-//                                        long extractedSize = 0;
-//                                        float lastProgress = 0;
-//
-//                                        while ((entry = sevenZFile.getNextEntry()) != null) {
-//                                            if (entry.isDirectory()) {
-//                                                continue;
-//                                            }
-//                                            String itemName = entry.getName();
-//                                            System.out.println("ENTRY NAME---------------------------------------: " + itemName);
-//
-//                                            //check if this is a db file or not
-//                                            if (itemName.endsWith("db")) {
-//                                                itemName = addSQLiteSuffix(itemName);
-//                                                File outFile = new File(context.getDatabasePath(itemName).getAbsolutePath());
-////                                            outFile.getParentFile().mkdirs();
-//
-//                                                int bufferSize = 32 * 1024;
-//                                                try (FileOutputStream out = new FileOutputStream(outFile);
-//                                                     BufferedOutputStream bos = new BufferedOutputStream(out, bufferSize)) {
-//                                                    byte[] buffer = new byte[bufferSize]; // Use a larger buffer size
-//                                                    int len;
-//
-//                                                    synchronized(lock) {
-//                                                        while ((len = sevenZFile.read(buffer)) > 0) {
-////                                                            System.out.println("GO: " + len);
-//
-//                                                            bos.write(buffer, 0, len);
-//                                                            extractedSize += len;
-//
-//                                                            float progress = (float) ((extractedSize * 100) / totalSize);
-//
-//                                                            if(progress > 2 && ((progress - lastProgress) > 1 || ((100 - progress) <=2)))
-//                                                            {
-//                                                                JSObject progressUpdate = new JSObject();
-//                                                                progressUpdate.put("progress", progress / 100);
-//                                                                progressUpdate.put("fileName", outFile.getAbsolutePath());
-////                                                              notifyListeners("progressEvent", progressUpdate);
-//                                                                call.resolve(progressUpdate);
-//                                                                System.out.println("DBProgress " + totalSize + " " + progress);
-//                                                                lastProgress = progress;
-//                                                            }
-//                                                            if(sleepTime>0 && checkPercentInterval(progress))
-//                                                           {
-//                                                               System.out.println("inLOOP SLEEPTIME " + sleepTime);
-//                                                               System.out.println("Start SLEEP: ");
-//                                                               lock.wait(sleepTime);
-//                                                               System.out.println("Stop SLEEP: ");
-//                                                           }
-//                                                        }
-//                                                    }
-//                                                }
-//                                                System.out.println("DB NAME---------------------------------------: " + outFile.getAbsolutePath());
-//                                            } else {
-//                                                extractedSize += entry.getSize();
-//                                                float progress = (float) ((extractedSize * 100) / totalSize);
-//                                                if((progress - lastProgress) > 0.5){
-//                                                    JSObject progressUpdate = new JSObject();
-//                                                    progressUpdate.put("progress", progress / 100);
-//                                                    progressUpdate.put("fileName", "");
-//                                                    lastProgress = progress;
-////                                                notifyListeners("progressEvent", progressUpdate);
-//                                                    call.resolve(progressUpdate);
-//                                                }
-//                                            }
-//
-//                                        }
-//                                    } catch (IOException e) {
-//                                        throw new RuntimeException(e);
-//                                    }
-//                                    sevenZFile.close();
-//                                    inputStream.close();
-//                                    callQueue.remove(call.getCallbackId());
-//                                    call.release(bridge);
-//
-//                                } catch (Throwable e) {
-//                                    callQueue.remove(call.getCallbackId());
-//                                    call.release(bridge);
-//                                    call.reject(e.getMessage());
-//                                    result=false;
-//                                }
-//
-//                            tmp7zFile.delete();
-//                            return result;
-//                        }).exceptionally(ex -> {
-//                            // Exception handling logic
-//                            return false;
-//                        });
 
                         currentThread = new Thread(new Runnable() {
                             public void run() {
@@ -328,14 +226,21 @@ public class SevenzipPlugin extends Plugin {
                                                                 call.resolve(progressUpdate);
                                                                 System.out.println("DBProgress " + totalSize + " " + progress);
                                                                 lastProgress = progress;
-                                                            }
-                                                            if(sleepTime>0 && checkPercentInterval(progress))
-                                                            {
+                                                                if(sleepTime>0 && progress<97)
+                                                                {
                                                                 System.out.println("inLOOP SLEEPTIME " + sleepTime);
                                                                 System.out.println("Start SLEEP: ");
                                                                 lock.wait(sleepTime);
                                                                 System.out.println("Stop SLEEP: ");
+                                                                }
                                                             }
+                                                            // if(sleepTime>0 && checkPercentInterval(progress))
+                                                            // {
+                                                            //     System.out.println("inLOOP SLEEPTIME " + sleepTime);
+                                                            //     System.out.println("Start SLEEP: ");
+                                                            //     lock.wait(sleepTime);
+                                                            //     System.out.println("Stop SLEEP: ");
+                                                            // }
                                                         }
                                                     }
                                                 }
