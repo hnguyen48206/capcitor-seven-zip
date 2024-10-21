@@ -1,5 +1,6 @@
 package com.mysevenzip.hnguyen;
 
+import android.os.Build;
 import android.os.Environment;
 
 import com.getcapacitor.JSObject;
@@ -10,9 +11,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
-import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
-import org.apache.commons.io.IOUtils;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 
@@ -159,96 +159,99 @@ public class SevenzipPlugin extends Plugin {
 //                        System.out.println("Asset File ----- " + log);
 //                    }
                     File tmp7zFile = createTempFileFromInputStream(inputStream);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        CompletableFuture.runAsync(() -> {
+                            // method call or code to be async.
 
-                    new Thread(() -> {
+                                try (SevenZFile sevenZFile = new SevenZFile(tmp7zFile, password.toCharArray())) {
+                                    //logger.log(Level.INFO, sevenZFile.getEntries()); ;
+                                    SevenZArchiveEntry entry;
+                                    long totalSize = 0;
+                                    var Meta = sevenZFile.getEntries();
+                                    for (SevenZArchiveEntry element : Meta)
+                                    {
+                                        System.out.print(element.getName());
+                                        totalSize += element.getSize();
+                                    }
 
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                            try (SevenZFile sevenZFile = new SevenZFile(tmp7zFile, password.toCharArray())) {
-                                //logger.log(Level.INFO, sevenZFile.getEntries()); ;
-                                SevenZArchiveEntry entry;
-                                long totalSize = 0;
-                                var Meta = sevenZFile.getEntries();
-                                for (SevenZArchiveEntry element : Meta)
-                                {
-                                    System.out.print(element.getName());
-                                    totalSize += element.getSize();
-                                }
+                                    try {
+                                        long extractedSize = 0;
+                                        float lastProgress = 0;
 
-                                try {
-                                    long extractedSize = 0;
-                                    float lastProgress = 0;
+                                        while ((entry = sevenZFile.getNextEntry()) != null) {
+                                            if (entry.isDirectory()) {
+                                                continue;
+                                            }
+                                            String itemName = entry.getName();
+                                            System.out.println("ENTRY NAME---------------------------------------: " + itemName);
 
-                                    while ((entry = sevenZFile.getNextEntry()) != null) {
-                                        if (entry.isDirectory()) {
-                                            continue;
-                                        }
-                                        String itemName = entry.getName();
-                                        System.out.println("ENTRY NAME---------------------------------------: " + itemName);
-
-                                        //check if this is a db file or not
-                                        if (itemName.endsWith("db")) {
-                                            itemName = addSQLiteSuffix(itemName);
-                                            File outFile = new File(context.getDatabasePath(itemName).getAbsolutePath());
+                                            //check if this is a db file or not
+                                            if (itemName.endsWith("db")) {
+                                                itemName = addSQLiteSuffix(itemName);
+                                                File outFile = new File(context.getDatabasePath(itemName).getAbsolutePath());
 //                                            outFile.getParentFile().mkdirs();
 
-                                            int bufferSize = 32 * 1024;
-                                            try (FileOutputStream out = new FileOutputStream(outFile);
-                                                 BufferedOutputStream bos = new BufferedOutputStream(out, bufferSize)) {
-                                                byte[] buffer = new byte[bufferSize]; // Use a larger buffer size
-                                                int len;
-                                                while ((len = sevenZFile.read(buffer)) > 0) {
-                                                    bos.write(buffer, 0, len);
-                                                    extractedSize += len;
-                                                    float progress = (float) ((extractedSize * 100) / totalSize);
+                                                int bufferSize = 32 * 1024;
+                                                try (FileOutputStream out = new FileOutputStream(outFile);
+                                                     BufferedOutputStream bos = new BufferedOutputStream(out, bufferSize)) {
+                                                    byte[] buffer = new byte[bufferSize]; // Use a larger buffer size
+                                                    int len;
+                                                    while ((len = sevenZFile.read(buffer)) > 0) {
+                                                        bos.write(buffer, 0, len);
+                                                        extractedSize += len;
+                                                        float progress = (float) ((extractedSize * 100) / totalSize);
 
-                                                    if(progress > 2 && ((progress - lastProgress) > 1 || ((100 - progress) <=2)))
-                                                    {
+                                                        if(progress > 2 && ((progress - lastProgress) > 1 || ((100 - progress) <=2)))
+                                                        {
 
-                                                        JSObject progressUpdate = new JSObject();
-                                                        progressUpdate.put("progress", progress / 100);
-                                                        progressUpdate.put("fileName", outFile.getAbsolutePath());
+                                                            JSObject progressUpdate = new JSObject();
+                                                            progressUpdate.put("progress", progress / 100);
+                                                            progressUpdate.put("fileName", outFile.getAbsolutePath());
 //                                                        notifyListeners("progressEvent", progressUpdate);
-                                                        call.resolve(progressUpdate);
-                                                        System.out.println("DBProgress " + totalSize + " " + progress);
-                                                        lastProgress = progress;
-                                                    }
-                                                    if(checkPercentInterval(progress))
-                                                    {
-                                                        Thread.yield();
+                                                            call.resolve(progressUpdate);
+                                                            System.out.println("DBProgress " + totalSize + " " + progress);
+                                                            lastProgress = progress;
+                                                        }
+                                                         if(checkPercentInterval(progress))
+                                                         {
+                                                             Thread.yield();
+                                                         }
                                                     }
                                                 }
-                                            }
-                                            System.out.println("DB NAME---------------------------------------: " + outFile.getAbsolutePath());
-                                        } else {
-                                            extractedSize += entry.getSize();
-                                            float progress = (float) ((extractedSize * 100) / totalSize);
-                                            if((progress - lastProgress) > 0.5){
-                                                JSObject progressUpdate = new JSObject();
-                                                progressUpdate.put("progress", progress / 100);
-                                                progressUpdate.put("fileName", "");
-                                                lastProgress = progress;
+                                                System.out.println("DB NAME---------------------------------------: " + outFile.getAbsolutePath());
+                                            } else {
+                                                extractedSize += entry.getSize();
+                                                float progress = (float) ((extractedSize * 100) / totalSize);
+                                                if((progress - lastProgress) > 0.5){
+                                                    JSObject progressUpdate = new JSObject();
+                                                    progressUpdate.put("progress", progress / 100);
+                                                    progressUpdate.put("fileName", "");
+                                                    lastProgress = progress;
 //                                                notifyListeners("progressEvent", progressUpdate);
-                                                call.resolve(progressUpdate);
+                                                    call.resolve(progressUpdate);
+                                                }
                                             }
+
                                         }
-
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(e);
                                     }
-                                } catch (IOException e) {
-                                    throw new RuntimeException(e);
-                                }
-                                sevenZFile.close();
-                                inputStream.close();
-                                callQueue.remove(call.getCallbackId());
-                                call.release(bridge);
+                                    sevenZFile.close();
+                                    inputStream.close();
+                                    callQueue.remove(call.getCallbackId());
+                                    call.release(bridge);
 
-                            } catch (Throwable e) {
-                                callQueue.remove(call.getCallbackId());
-                                call.release(bridge);
-                                call.reject(e.getMessage());
-                            }
-                        }
+                                } catch (Throwable e) {
+                                    callQueue.remove(call.getCallbackId());
+                                    call.release(bridge);
+                                    call.reject(e.getMessage());
+                                }
+
                             tmp7zFile.delete();
-                    }).start();
+
+                        });
+                    }
+
                 } catch (Throwable e) {
                     callQueue.remove(call.getCallbackId());
                     call.release(bridge);
@@ -267,7 +270,7 @@ public class SevenzipPlugin extends Plugin {
             new Thread(() -> {
                 Uri fileUri = Uri.parse(filePath);
 
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     try (ParcelFileDescriptor pfd = getContext().getContentResolver().openFileDescriptor(fileUri, "r");
                          FileInputStream fis = new FileInputStream(pfd.getFileDescriptor());
                          BufferedInputStream bis = new BufferedInputStream(fis);
