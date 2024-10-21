@@ -149,8 +149,9 @@ cancelUnzipping() => Promise<any>
 - Đối với iOS, tham số ***sqlLiteDBLocationConfig*** cần truyền vào giá trị như giá trị đã cấu hình cho ***iosDatabaseLocation*** của plugin SQLLite. Lưu ý là thư mục cấu hình này ***iosDatabaseLocation*** cần bảo đảm đã tồn tại trước khi gọi unzip (nếu ko unzip tuy thành công nhưng sẽ ko move file sang thư mục cần được). Giá trị Default của SQLLite đặt thư mục này là Document.
 - Thư mục giải nén ra trên Android là thư mục ko thể truy cập bằng FileSystem. Là thư mục DB dành riêng của app. Chỉ có thể truy cập bằng DB apis (hoặc dùng thư viện viết sẵn như SQLLite).
 - Mặc định, thư viện sẽ có giá trị delay thời gian giải nén là 100 miliseconds (cho mỗi 2% xử lý). Nếu muốn overide giá trị này, thì có 2 cách:
-+ Một, truyền thêm tham số ***sleepTime*** vào option của method unzip. Như vậy unzip sẽ thực thi với giá trị delay này từ đầu.
-+ Hai, sử dụng method setSleepTime để can thiệp thay đổi động giá trị delay. Cách này có thể thay đổi bất cứ lúc nào (trước - trong khi chạy unzip đều được).
+>+ Một, truyền thêm tham số ***sleepTime*** vào option của method unzip. Như vậy unzip sẽ thực thi với giá trị delay này từ đầu.
+>+ Hai, sử dụng method setSleepTime để can thiệp thay đổi động giá trị delay. Cách này có thể thay đổi bất cứ lúc nào (trước - trong khi chạy unzip đều được).
+>Trường hợp truyền 0 thì sẽ không có delay xử lý.
 - Để huỷ quá trình unzip khi đang chạy giữa chừng, có thể gọi method ***cancelUnzipping***
 
 (*) Trên Android, cần cấp quyền READ_EXTERNAL_STORAGE va WRITE_EXTERNAL_STORAGE trong permission. Ngoài ra có thể request permission ở runtime,
