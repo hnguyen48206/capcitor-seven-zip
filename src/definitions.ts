@@ -1,8 +1,11 @@
 export interface SevenzipPlugin {
   unzip(options: SevenzipOtions, callback: WatchProgressCallback): Promise<CallbackID>;
-
   clearProgressWatch(options: ClearWatchOptions): Promise<void>;
   getDefaultPath(): Promise<any>;
+  setSleepTime(options:{
+    sleepTime:number
+  }): Promise<any>;
+  cancelUnzipping(): Promise<any>;
 }
 export interface ClearWatchOptions {
   id: CallbackID;
@@ -16,6 +19,7 @@ export interface SevenzipOtions {
   rmSourceFile?: boolean;
   isLocalAsset?: boolean;
   sqlLiteDBLocationConfig?: string;
+  sleepTime?:number;
 }
 
 export type CallbackID = string;

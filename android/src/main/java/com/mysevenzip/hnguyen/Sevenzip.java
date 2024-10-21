@@ -10,4 +10,10 @@ public class Sevenzip {
      public Object getDefaultPath(Object value) {
         return value;
     }
+     public Object cancelUnzipping(Object value) {
+        return value;
+    }
+     public Object setSleepTime(Object value) {
+        return value;
+    }
 }

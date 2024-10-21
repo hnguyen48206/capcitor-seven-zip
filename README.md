@@ -16,6 +16,8 @@ npx cap sync
 * [`unzip(...)`](#unzip)
 * [`clearProgressWatch(...)`](#clearprogresswatch)
 * [`getDefaultPath()`](#getdefaultpath)
+* [`setSleepTime(...)`](#setsleeptime)
+* [`cancelUnzipping()`](#cancelunzipping)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 
@@ -64,6 +66,32 @@ getDefaultPath() => Promise<any>
 --------------------
 
 
+### setSleepTime(...)
+
+```typescript
+setSleepTime(options: { sleepTime: number; }) => Promise<any>
+```
+
+| Param         | Type                                |
+| ------------- | ----------------------------------- |
+| **`options`** | <code>{ sleepTime: number; }</code> |
+
+**Returns:** <code>Promise&lt;any&gt;</code>
+
+--------------------
+
+
+### cancelUnzipping()
+
+```typescript
+cancelUnzipping() => Promise<any>
+```
+
+**Returns:** <code>Promise&lt;any&gt;</code>
+
+--------------------
+
+
 ### Interfaces
 
 
@@ -77,6 +105,7 @@ getDefaultPath() => Promise<any>
 | **`rmSourceFile`**            | <code>boolean</code> |
 | **`isLocalAsset`**            | <code>boolean</code> |
 | **`sqlLiteDBLocationConfig`** | <code>string</code>  |
+| **`sleepTime`**               | <code>number</code>  |
 
 
 #### ClearWatchOptions
