@@ -36,8 +36,10 @@ import android.content.res.AssetManager;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import java.util.*;
+
 @CapacitorPlugin(name = "Sevenzip")
-public class SevenzipPlugin extends Plugin {
+public class SevenzipPlugin extends Plugin implements Observer {
     Logger logger = Logger.getAnonymousLogger();
     private Context context;
     private Object lock = new Object();
@@ -45,6 +47,8 @@ public class SevenzipPlugin extends Plugin {
     private int sleepTime = 100;
     private CompletableFuture<Boolean> currentUnzippingProcess;
     private Thread currentThread;
+    private BeingObserved notifier = new BeingObserved();
+
     ArrayList<String> callQueue = new ArrayList<String>();
 
     public void rmSrcFile(Uri fileUri) {
@@ -120,7 +124,7 @@ public class SevenzipPlugin extends Plugin {
 
     @PluginMethod(returnType = PluginMethod.RETURN_CALLBACK)
     public void unzip(PluginCall call) {
-
+//        notifier.addObserver(this);
         call.setKeepAlive(true);
         callQueue.add(call.getCallbackId());
         String filePath = call.getString("fileURL") != null ? call.getString("fileURL") : "";
@@ -294,7 +298,6 @@ public class SevenzipPlugin extends Plugin {
                 call.reject(msg);
             }
 
-
         } else {
             new Thread(() -> {
                 Uri fileUri = Uri.parse(filePath);
@@ -379,7 +382,6 @@ public class SevenzipPlugin extends Plugin {
             }).start();
         }
 
-
     }
 
     @PluginMethod
@@ -430,6 +432,9 @@ public class SevenzipPlugin extends Plugin {
     @PluginMethod
     public void cancelUnzipping(PluginCall call) {
         try{
+//            JSObject test = new JSObject();
+//            test.put("testObservable", true);
+//            notifier.emit(test);
             if(currentThread!=null)
                 currentThread.interrupt();
             JSObject res = new JSObject();
@@ -455,5 +460,22 @@ public class SevenzipPlugin extends Plugin {
         }
         return inputStream;
     }
+
+    @Override
+    public void update(Observable o, Object arg) {
+        JSObject data = (JSObject)arg;
+        System.out.println("My Observable Data");
+        System.out.println(data.toString());
+    }
 }
+// This is class being observed
+class BeingObserved extends Observable
+{
+    void emit(JSObject data)
+    {
+        setChanged();
+        notifyObservers(data);
+    }
+}
+
 
