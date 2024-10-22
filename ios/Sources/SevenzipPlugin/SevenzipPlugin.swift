@@ -16,7 +16,7 @@ var notificationObserver: NSObjectProtocol?
 @objc(SevenzipPlugin)
 public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     var isUnzippingRunning = false
-    
+    var lastSleep:Int = 0
     func deleteFile(at path: String) {
     print("File to delete: \(path) -----------------------------")
 
@@ -35,29 +35,22 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     }
 //    Delegate Function
     public func decoder(decoder: PLzmaSDK.Decoder, path: String, progress: Double) {
-                print("Reader progress: \(progress)")
-        
-        if(self.isFromLocalAssetExtraction)
+        print("Reader progress: \(progress)")
+        let name = finalOutputDir + "/" + path;
+        globalCall?.resolve(
+          ["fileName":name, "progress":progress]
+        )
+        self.notifyListeners("progressEvent", data: ["fileName": name, "progress":progress])
+        if(sleepTime>0)
         {
-            if((1 - progress) >= 0.1)
+            let current = Int((progress*100).rounded(.up))
+            if((current%2)==0 && current != lastSleep)
             {
-                let name = finalOutputDir + "/" + path;
-                globalCall?.resolve(
-                  ["fileName":name, "progress":progress]
-                )
-                self.notifyListeners("progressEvent", data: ["fileName": name, "progress":progress])
+                Thread.sleep(forTimeInterval: sleepTime)
+                lastSleep = current
+                print(lastSleep)
             }
-          
         }
-        else
-        {
-            let name = finalOutputDir + "/" + path;
-            globalCall?.resolve(
-              ["fileName":name, "progress":progress]
-            )
-            self.notifyListeners("progressEvent", data: ["fileName": name, "progress":progress])
-        }
-      
     }
     
     public let identifier = "SevenzipPlugin"
@@ -73,7 +66,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     private var isFromLocalAssetExtraction = false
     private var hasLocalDBInit = false
     private var databaseLocation = "Documents"
-    
+    private var sleepTime:Double = 0
     private let implementation = Sevenzip()
     private var callQueue = [String]()
     
@@ -154,9 +147,12 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         let rmSourceFile = call.getBool("rmSourceFile") ?? false
         var filePath = call.getString("fileURL") ?? ""
         var outputDir = call.getString("outputDir") ?? ""
-        var password = call.getString("password") ?? ""
-        var sqlLiteDBLocationConfig = call.getString("sqlLiteDBLocationConfig") ?? "Documents"
-        
+        let password = call.getString("password") ?? ""
+        let sqlLiteDBLocationConfig = call.getString("sqlLiteDBLocationConfig") ?? "Documents"
+        let customSleepTime = call.getDouble("sleepTime") ?? sleepTime
+        if(customSleepTime != sleepTime)
+        { sleepTime = customSleepTime/1000 }
+            
         if(isLocalAsset)
         {
             isUnzippingRunning = true
@@ -173,14 +169,14 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
                 print("GET ASSET FILE OK")
                 print(assetPath)
                 
-                var url = URL.init(string: assetPath)
+                let url = URL.init(string: assetPath)
                 let newName = setPathSuffix(sDb: url?.lastPathComponent ?? "")
                 if(newName != "")
                 {
                     print(newName)
                 }
                 //output Dir will be in tmp Directory
-                var finalOutputDir = FileManager.default.temporaryDirectory.appendingPathComponent("tmpdb", isDirectory: true)
+                let finalOutputDir = FileManager.default.temporaryDirectory.appendingPathComponent("tmpdb", isDirectory: true)
                 print("Tmp Application directory: \(finalOutputDir)")
                 
                 unzipHandler = DispatchWorkItem { [self] in
@@ -203,14 +199,14 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
                             if let userInfo = notification.userInfo, let value = userInfo["unzipCanceling"] as? Bool {
                                 print("Received notification with value: \(value)")
                                 do {
-                                 isUnzippingRunning = false
-                                 try decoder.abort()
+                                    isUnzippingRunning = false
+                                    try decoder.abort()
                                 } catch {
                                     print(error)
                                 }
                             }
                         }
-   
+                        
                         let extracted = try decoder.extract(to: Path(finalOutputDir.relativePath))
                         // call.keepAlive = false
                         
@@ -223,22 +219,14 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
                                 let newName = self.setPathSuffix(sDb: element)
                                 var uAsset = finalOutputDir
                                 uAsset.appendPathComponent(element)
-                                var uDb = try getFolderURL(folderPath: self.databaseLocation)
+                                let uDb = try getFolderURL(folderPath: self.databaseLocation)
                                     .appendingPathComponent(newName)
                                 print(uDb.absoluteString)
                                 try self.copyFromAssetToDatabase(uAsset: uAsset, uDb: uDb)
                             }
                         }
                         
-                        //Fire the last noti for moving files if all set
-                        if(isUnzippingRunning)
-                        {
-                            call.resolve(
-                                ["fileName":"", "progress":1]
-                            )
-                            self.notifyListeners("progressEvent", data: ["fileName": "", "progress":1])
-                        }
-                        else
+                        if(!isUnzippingRunning)
                         {
                             call.reject("Canceled Unzipping")
                         }
@@ -265,9 +253,12 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
                         }
                         self.callQueue.removeAll(where: { $0 == call.callbackId})
                     }
-                }
-                if let observer = notificationObserver {
-                NotificationCenter.default.removeObserver(observer)
+                    
+                    isFromLocalAssetExtraction = false
+                    isUnzippingRunning = false
+                    if let observer = notificationObserver {
+                    NotificationCenter.default.removeObserver(observer)
+                    }
                 }
                 DispatchQueue.global().async(execute: unzipHandler!)
    
@@ -282,8 +273,6 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
                 callQueue.removeAll(where: { $0 == call.callbackId})
             }
 
-            isFromLocalAssetExtraction = false
-            isUnzippingRunning = false
         }
         else
         {
@@ -361,7 +350,11 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     }
     
     @objc func setSleepTime(_ call: CAPPluginCall) {
-        call.resolve(["path":NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? NSHomeDirectory()])
+        let customSleepTime = call.getDouble("sleepTime") ?? sleepTime
+        if(customSleepTime != sleepTime)
+        { sleepTime = customSleepTime/1000 }
+        print("NEW SLEEPTIME " + String(sleepTime))
+        call.resolve(["result":true])
     }
     
     @objc func cancelUnzipping(_ call: CAPPluginCall) {
