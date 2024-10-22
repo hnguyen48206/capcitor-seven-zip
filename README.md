@@ -134,8 +134,8 @@ cancelUnzipping() => Promise<any>
 
 (*) Trường hợp sử dụng lib như một thư viện giải nén 7z generic (sử dụng file trong FileSystem)
 
-- fileURL là field bắt buộc, ở dạng absolute path (protocol 'file://' cho iOS và 'content://' cho Android).  
-- password, outputDir, rmSourceFile là optional. Mặc định, file giải nén sẽ lưu ở thư mục Document của App (trên iOS) -- Đây là thư mục public của app và sẽ bị xoá khi uninstall app. Trên Android, thư mục mặc định là thư mục Document của ExternalStorage -- Đây là thư mục public của device và không bị xoá khi uninstall app. (khi nhận info từ callback hoặc progressEvent thì fileName sẽ thể hiện absolute path nơi file giải nén ra được lưu)
+- ***fileURL*** là field bắt buộc, ở dạng absolute path (protocol 'file://' cho iOS và 'content://' cho Android).  
+- ***password, outputDir, rmSourceFile*** là optional. File giải nén sẽ lưu ở thư mục Document của ứng dụng (trên iOS) -- Đây là thư mục public của app và sẽ bị xoá khi uninstall app. Trên Android, thư mục mặc định là thư mục Document của ExternalStorage -- Đây là thư mục public của device và không bị xoá khi uninstall app. (khi nhận info từ callback hoặc progressEvent thì fileName sẽ thể hiện absolute path nơi file giải nén ra được lưu)
 - Nếu truyền outputDir thì sẽ là subpath của path mặc định, ví dụ '/subthumuc/thumuc1' (lưu ý cần có / ở đầu).
 - Lưu ý là subDir này cần tạo trước và bảo đảm có tồn tại trước khi truyền vào unzip.
 - Nếu truyền rmSourceFile là True thì sẽ xoá file archive gốc sau khi bung nén. Tuy nhiên, chỉ hoạt động trên iOS do thư mục giải nén trên Android là public, app ko có quyền xoá file trừ khi dev thành file manager (rắc rối với app store)
