@@ -139,7 +139,7 @@ cancelUnzipping() => Promise<any>
 - Nếu truyền outputDir thì sẽ là subpath của path mặc định, ví dụ '/subthumuc/thumuc1' (lưu ý cần có / ở đầu).
 - Lưu ý là subDir này cần tạo trước và bảo đảm có tồn tại trước khi truyền vào unzip.
 - Nếu truyền rmSourceFile là True thì sẽ xoá file archive gốc sau khi bung nén. Tuy nhiên, chỉ hoạt động trên iOS do thư mục giải nén trên Android là public, app ko có quyền xoá file trừ khi dev thành file manager (rắc rối với app store)
-- isLocalAsset và sqlLiteDBLocationConfig không sử dụng.
+- Các param options còn lại không sử dụng trong chế độ này.
 
 (*) Trường hợp sử dụng nội bộ (cần truyền biến ***isLocalAsset*** là TRUE)
 
