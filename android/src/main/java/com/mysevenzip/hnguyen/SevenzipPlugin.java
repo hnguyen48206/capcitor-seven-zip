@@ -14,6 +14,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 
+import java.io.PrintStream;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 import java.util.ArrayList;
@@ -90,6 +91,15 @@ public class SevenzipPlugin extends Plugin implements Observer {
     public void load() {
         // Get the context
         this.context = this.getActivity().getApplicationContext();
+        // Turn off loggging
+        System.setOut(
+                new PrintStream(new OutputStream() {
+                    public  void    close() {}
+                    public  void    flush() {}
+                    public  void    write(byte[] b) {}
+                    public  void    write(byte[] b, int off, int len) {}
+                    public  void    write(int b) {}
+                } ));
     }
 
     public String addSQLiteSuffix(String fileName) {
@@ -238,13 +248,6 @@ public class SevenzipPlugin extends Plugin implements Observer {
                                                                 System.out.println("Stop SLEEP: ");
                                                                 }
                                                             }
-                                                            // if(sleepTime>0 && checkPercentInterval(progress))
-                                                            // {
-                                                            //     System.out.println("inLOOP SLEEPTIME " + sleepTime);
-                                                            //     System.out.println("Start SLEEP: ");
-                                                            //     lock.wait(sleepTime);
-                                                            //     System.out.println("Stop SLEEP: ");
-                                                            // }
                                                         }
                                                     }
                                                 }
