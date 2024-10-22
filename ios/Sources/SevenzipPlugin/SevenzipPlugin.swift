@@ -7,15 +7,21 @@ import PLzmaSDK
  */
 var globalCall: CAPPluginCall? = nil
 var finalOutputDir = ""
+var unzipHandler: DispatchWorkItem? = nil
+extension Notification.Name {
+static let sevenzipNotification = Notification.Name("sevenzipNotification")
+}
+var notificationObserver: NSObjectProtocol?
 
 @objc(SevenzipPlugin)
 public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
+    var isUnzippingRunning = false
+    
     func deleteFile(at path: String) {
     print("File to delete: \(path) -----------------------------")
 
     let fileManager = FileManager.default
     let fileURL = URL(fileURLWithPath: path)
-
     do {
     if fileManager.fileExists(atPath: path) {
     try fileManager.removeItem(at: fileURL)
@@ -27,7 +33,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     print("Error deleting file: \(error.localizedDescription)")
     }
     }
-
+//    Delegate Function
     public func decoder(decoder: PLzmaSDK.Decoder, path: String, progress: Double) {
                 print("Reader progress: \(progress)")
         
@@ -59,8 +65,9 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "unzip", returnType: CAPPluginReturnCallback),
         CAPPluginMethod(name: "clearProgressWatch", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "getDefaultPath", returnType: CAPPluginReturnPromise)
-
+        CAPPluginMethod(name: "getDefaultPath", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setSleepTime", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "cancelUnzipping", returnType: CAPPluginReturnPromise)
     ]
 
     private var isFromLocalAssetExtraction = false
@@ -138,6 +145,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
             }
 
         }
+    
     @objc func unzip(_ call: CAPPluginCall) {
         call.keepAlive = true
         callQueue.append(call.callbackId)
@@ -151,6 +159,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         
         if(isLocalAsset)
         {
+            isUnzippingRunning = true
             isFromLocalAssetExtraction = true
             //Init SQLLite DB Location if not
             if(!hasLocalDBInit)
@@ -160,7 +169,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
             }
             //Get 7z file from Asset
             if let assetPath = getAssetFile(fileName: "public/assets/" + filePath) {
-            // Process the data
+                // Process the data
                 print("GET ASSET FILE OK")
                 print(assetPath)
                 
@@ -173,84 +182,97 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
                 //output Dir will be in tmp Directory
                 var finalOutputDir = FileManager.default.temporaryDirectory.appendingPathComponent("tmpdb", isDirectory: true)
                 print("Tmp Application directory: \(finalOutputDir)")
-
-                do {
-                    try FileManager.default.createDirectory(at: finalOutputDir, withIntermediateDirectories: true, attributes: nil)
-                    
-                    let archivePath = try Path(assetPath)
-                    let archivePathInStream = try InStream(path: archivePath)
-                    let decoder = try Decoder(stream: archivePathInStream, fileType: .sevenZ, delegate: self)
-                    if(password != "")
-                    {
-                        try decoder.setPassword(password)
+                
+                unzipHandler = DispatchWorkItem { [self] in
+                    do {
+                        
+                        try FileManager.default.createDirectory(at: finalOutputDir, withIntermediateDirectories: true, attributes: nil)
+                        
+                        let archivePath = try Path(assetPath)
+                        let archivePathInStream = try InStream(path: archivePath)
+                        let decoder = try Decoder(stream: archivePathInStream, fileType: .sevenZ, delegate: self)
+                        if(password != "")
+                        {
+                            try decoder.setPassword(password)
+                        }
+                        
+                        let opened = try decoder.open()
+                        print("Input: \(filePath)  Output:\(finalOutputDir)")
+                        
+                        notificationObserver = NotificationCenter.default.addObserver(forName: .sevenzipNotification, object: nil, queue: .main) { [self] notification in
+                            if let userInfo = notification.userInfo, let value = userInfo["unzipCanceling"] as? Bool {
+                                print("Received notification with value: \(value)")
+                                do {
+                                 isUnzippingRunning = false
+                                 try decoder.abort()
+                                } catch {
+                                    print(error)
+                                }
+                            }
+                        }
+   
+                        let extracted = try decoder.extract(to: Path(finalOutputDir.relativePath))
+                        // call.keepAlive = false
+                        
+                        //Loop through extracted DBs and move to SQLLite Location
+                        let enumerator = FileManager.default.enumerator(atPath: finalOutputDir.relativePath)
+                        while let element = enumerator?.nextObject() as? String, isUnzippingRunning{
+                            print(element)
+                            if(element.hasSuffix(".db"))
+                            {
+                                let newName = self.setPathSuffix(sDb: element)
+                                var uAsset = finalOutputDir
+                                uAsset.appendPathComponent(element)
+                                var uDb = try getFolderURL(folderPath: self.databaseLocation)
+                                    .appendingPathComponent(newName)
+                                print(uDb.absoluteString)
+                                try self.copyFromAssetToDatabase(uAsset: uAsset, uDb: uDb)
+                            }
+                        }
+                        
+                        //Fire the last noti for moving files if all set
+                        if(isUnzippingRunning)
+                        {
+                            call.resolve(
+                                ["fileName":"", "progress":1]
+                            )
+                            self.notifyListeners("progressEvent", data: ["fileName": "", "progress":1])
+                        }
+                        else
+                        {
+                            call.reject("Canceled Unzipping")
+                        }
+                        
+                        if let saved_call = self.bridge?.savedCall(withID: call.callbackId) {
+                            self.bridge?.releaseCall(call)
+                        }
+                        self.callQueue.removeAll(where: { $0 == call.callbackId})
+                        
+                        //check If target Folder has the DB
+                        let finalTarget = FileManager.default.enumerator(atPath: try getFolderURL(folderPath: self.databaseLocation).absoluteString)
+                        while let element = enumerator?.nextObject() as? String {
+                            print("DB. SQL Lite " + element)
+                        }
+                        self.cleanTmpFolder()
                     }
-                    
-                    let opened = try decoder.open()
-                    print("Input: \(filePath)  Output:\(finalOutputDir)")
-                    let extracted = try decoder.extract(to: Path(finalOutputDir.relativePath))
-                    
-                    // call.keepAlive = false
-                    
-                   
-                    
-                    //Loop through extracted DBs and move to SQLLite Location
-                    let enumerator = FileManager.default.enumerator(atPath: finalOutputDir.relativePath)
-                       while let element = enumerator?.nextObject() as? String {
-                           print(element)
-                           if(element.hasSuffix(".db"))
-                           {
-                               let newName = setPathSuffix(sDb: element)
-                               var uAsset = finalOutputDir
-                               uAsset.appendPathComponent(element)
-                               var uDb = try getFolderURL(folderPath: databaseLocation)
-                                   .appendingPathComponent(newName)
-                               print(uDb.absoluteString)
-                               try copyFromAssetToDatabase(uAsset: uAsset, uDb: uDb)
-                           }
-                           
-//                           if let fType = enumerator?.fileAttributes?[FileAttributeKey.type] as? FileAttributeType{
-//
-//                               switch fType{
-//                               case .typeRegular:
-//                                   print("a file")
-//                               case .typeDirectory:
-//                                   print("a dir")
-//                               default:
-//                                   print("")
-//                               }
-//                           }
-
-                       }
-                    
-                    //Fire the lase noti for moving files
-                    call.resolve(
-                      ["fileName":"", "progress":1]
-                    )
-                    notifyListeners("progressEvent", data: ["fileName": "", "progress":1])
-                    
-                    if let saved_call = bridge?.savedCall(withID: call.callbackId) {
-                        bridge?.releaseCall(call)
+                    catch {
+                        let description = "\(error)"
+                        print("Exception: \(description)")
+                        call.reject(description)
+                        
+                        if let saved_call = self.bridge?.savedCall(withID: call.callbackId) {
+                            self.bridge?.releaseCall(call)
+                        }
+                        self.callQueue.removeAll(where: { $0 == call.callbackId})
                     }
-                    callQueue.removeAll(where: { $0 == call.callbackId})
-                    
-                    //check If target Folder has the DB
-                    let finalTarget = FileManager.default.enumerator(atPath: try getFolderURL(folderPath: databaseLocation).absoluteString)
-                       while let element = enumerator?.nextObject() as? String {
-                           print("DB. SQL Lite " + element)
-                       }
-                    cleanTmpFolder()
                 }
-                catch {
-                    let description = "\(error)"
-                    print("Exception: \(description)")
-                    call.reject(description)
-
-                    if let saved_call = bridge?.savedCall(withID: call.callbackId) {
-                                   bridge?.releaseCall(call)
-                   }
-                    callQueue.removeAll(where: { $0 == call.callbackId})
+                if let observer = notificationObserver {
+                NotificationCenter.default.removeObserver(observer)
                 }
-            } else {
+                DispatchQueue.global().async(execute: unzipHandler!)
+   
+            }
+            else {
             print("FAIL TO GET ASSET FILE")
             call.reject("FAIL TO GET ASSET FILE")
 
@@ -261,6 +283,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
             }
 
             isFromLocalAssetExtraction = false
+            isUnzippingRunning = false
         }
         else
         {
@@ -319,7 +342,6 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
 
     }
     
-    
     @objc func clearProgressWatch(_ call: CAPPluginCall) {
         guard let callbackId = call.getString("id") else {
             call.reject("Watch call id must be provided")
@@ -338,6 +360,17 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         call.resolve(["path":NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? NSHomeDirectory()])
     }
     
+    @objc func setSleepTime(_ call: CAPPluginCall) {
+        call.resolve(["path":NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first ?? NSHomeDirectory()])
+    }
+    
+    @objc func cancelUnzipping(_ call: CAPPluginCall) {
+        print("CALLING CANCEL ---------------------------------------------")
+        NotificationCenter.default.post(name: .sevenzipNotification, object: nil, userInfo: ["unzipCanceling": true])
+        unzipHandler?.cancel()
+        call.resolve(["result":true])
+    }
+    
     func getAssetsDatabasesPath() -> URL? {
         if let appFolder = Bundle.main.resourceURL {
             return appFolder.appendingPathComponent("public/assets/databases")
@@ -348,7 +381,6 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         }
     }
     
-    
     func isDirExist(dirPath: String) -> Bool {
         var isDir: ObjCBool = true
         let fileManager = FileManager.default
@@ -356,7 +388,6 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
         return exists && isDir.boolValue
     }
 
-    
     func getFolderURL(folderPath: String) throws -> URL {
             do {
                 let databaseURL = try getDatabasesUrl().absoluteURL
@@ -405,9 +436,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
             }
         }
 
-
-
-   func getDatabaseLocationURL(databaseLocation: String) throws -> URL {
+    func getDatabaseLocationURL(databaseLocation: String) throws -> URL {
             do {
                 let url: URL = try getFolderURL(folderPath: databaseLocation)
 
@@ -419,7 +448,7 @@ public class SevenzipPlugin: CAPPlugin, CAPBridgedPlugin, DecoderDelegate {
 
         // MARK: - getApplicationURL
 
-func getApplicationURL() throws -> URL {
+    func getApplicationURL() throws -> URL {
             if let path: String = NSSearchPathForDirectoriesInDomains(
                 .applicationDirectory, .userDomainMask, true
             ).first {
@@ -430,11 +459,9 @@ func getApplicationURL() throws -> URL {
             }
         }
 
+    // MARK: - getCacheURL
 
-
-        // MARK: - getCacheURL
-
-func getCacheURL() throws -> URL {
+    func getCacheURL() throws -> URL {
             if let path: String = NSSearchPathForDirectoriesInDomains(
                 .cachesDirectory, .userDomainMask, true
             ).first {
@@ -445,15 +472,14 @@ func getCacheURL() throws -> URL {
             }
         }
 
-        // MARK: - getTmpURL
+    // MARK: - getTmpURL
 
-        func getTmpURL() -> URL {
-            return FileManager.default.temporaryDirectory
-        }
+    func getTmpURL() -> URL {
+        return FileManager.default.temporaryDirectory
+    }
+    // MARK: - getLibraryURL
 
-        // MARK: - getLibraryURL
-
-      func getLibraryURL() throws -> URL {
+    func getLibraryURL() throws -> URL {
             if let path: String = NSSearchPathForDirectoriesInDomains(
                 .libraryDirectory, .userDomainMask, true
             ).first {
@@ -464,7 +490,7 @@ func getCacheURL() throws -> URL {
             }
         }
 
-     func getFilePath(databaseLocation: String,
+    func getFilePath(databaseLocation: String,
                               fileName: String) throws -> String {
            do {
                let url: URL = try getFolderURL(folderPath: databaseLocation)
@@ -478,7 +504,7 @@ func getCacheURL() throws -> URL {
        }
     // MARK: - IsFileExist
 
-        func isFileExist(filePath: String) -> Bool {
+    func isFileExist(filePath: String) -> Bool {
             var ret: Bool = false
             let fileManager = FileManager.default
             if fileManager.fileExists(atPath: filePath) {
@@ -486,7 +512,8 @@ func getCacheURL() throws -> URL {
             }
             return ret
         }
-        func isFileExist(databaseLocation: String, fileName: String) -> Bool {
+        
+    func isFileExist(databaseLocation: String, fileName: String) -> Bool {
             var ret: Bool = false
             do {
                 let filePath: String =
@@ -525,7 +552,7 @@ func getCacheURL() throws -> URL {
        }
     // MARK: - DeleteFile
 
-         func deleteFile(fileName: String,
+    func deleteFile(fileName: String,
                               databaseLocation: String) throws -> Bool {
             var ret: Bool = false
             do {
@@ -542,7 +569,7 @@ func getCacheURL() throws -> URL {
 
         // MARK: - DeleteFile
 
-         func deleteFile(dbPathURL: URL, fileName: String) throws -> Bool {
+    func deleteFile(dbPathURL: URL, fileName: String) throws -> Bool {
             var ret: Bool = false
             do {
                 let uURL: URL = dbPathURL.appendingPathComponent(fileName)
@@ -556,6 +583,7 @@ func getCacheURL() throws -> URL {
             }
             return ret
         }
+    
     func copyFile(pathName: String, toPathName: String, overwrite: Bool) throws -> Bool {
             if pathName.count > 0 && toPathName.count > 0 {
                 let isPath = isFileExist(filePath: pathName)
