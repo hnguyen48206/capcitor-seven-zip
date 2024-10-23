@@ -16,6 +16,7 @@ import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 
 import java.io.PrintStream;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.ArrayList;
 
@@ -59,15 +60,15 @@ public class SevenzipPlugin extends Plugin implements Observer {
                 ContentResolver contentResolver = context.getContentResolver();
                 int rowsDeleted = contentResolver.delete(fileUri, null, null);
                 if (rowsDeleted > 0) {
-                    System.out.println("File deleted successfully.");
+                    logger.info("File deleted successfully.");
                 } else {
-                    System.out.println("No file found to delete.");
+                    logger.info("No file found to delete.");
                 }
             } catch (Exception e) {
-                System.out.println("Error deleting file: " + e.getMessage());
+                logger.info("Error deleting file: " + e.getMessage());
             }
         } else {
-            System.out.println("Invalid URI: " + fileUri);
+            logger.info("Invalid URI: " + fileUri);
         }
     }
 
@@ -100,6 +101,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
                     public  void    write(byte[] b, int off, int len) {}
                     public  void    write(int b) {}
                 } ));
+        logger.setLevel(Level.OFF);
     }
 
     public String addSQLiteSuffix(String fileName) {
@@ -144,11 +146,11 @@ public class SevenzipPlugin extends Plugin implements Observer {
         Boolean isLocalAsset = call.getBoolean("isLocalAsset") != null ? call.getBoolean("isLocalAsset") : false;
         sleepTime = call.getInt("sleepTime") != null ? call.getInt("sleepTime") : sleepTime;
 
-        System.out.println("FileInput. ------------------------------" + filePath);
+        logger.info("FileInput. ------------------------------" + filePath);
         String documentDir = String.valueOf(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS));
         //If using app-specific Dir, there will be no space left error --> must use external dir for large files
         //String documentDir = String.valueOf(context.getExternalFilesDir(null));
-        System.out.println("Document Application directory: " + documentDir);
+        logger.info("Document Application directory: " + documentDir);
 
         if (!isLocalAsset) {
             if (outputDir != "" && documentDir != null) {
@@ -163,11 +165,11 @@ public class SevenzipPlugin extends Plugin implements Observer {
         // File testOut = new File(outputDir);
 
         // if (testOut.canWrite()) {
-        //     System.out.println("File/Directory is writable.");
+        //     logger.info("File/Directory is writable.");
         // } else {
-        //     System.out.println("File/Directory is not writable.");
+        //     logger.info("File/Directory is not writable.");
         // }
-        System.out.println("isLocalAsset---------------------------------------: " + isLocalAsset);
+        logger.info("isLocalAsset---------------------------------------: " + isLocalAsset);
 
         if (isLocalAsset) {
             String msg = "";
@@ -176,12 +178,12 @@ public class SevenzipPlugin extends Plugin implements Observer {
             InputStream inputStream = getAssetFile(context, filePath.startsWith("public/assets/")?filePath:"public/assets/" + filePath);
             if (inputStream != null) {
                 // Process the input stream
-                System.out.println("ASSET FOUND---------------------------------------: ");
+                logger.info("ASSET FOUND---------------------------------------: ");
                 try {
 //                    AssetManager mngr = context.getAssets();
 //                    String itemList[] = mngr.list("");
 //                    for (String log : itemList) {
-//                        System.out.println("Asset File ----- " + log);
+//                        logger.info("Asset File ----- " + log);
 //                    }
                     File tmp7zFile = createTempFileFromInputStream(inputStream);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -208,7 +210,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
                                                 continue;
                                             }
                                             String itemName = entry.getName();
-                                            System.out.println("ENTRY NAME---------------------------------------: " + itemName);
+                                            logger.info("ENTRY NAME---------------------------------------: " + itemName);
 
                                             //check if this is a db file or not
                                             if (itemName.endsWith("db")) {
@@ -224,7 +226,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
 
                                                     synchronized(lock) {
                                                         while ((len = sevenZFile.read(buffer)) > 0) {
-//                                                            System.out.println("GO: " + len);
+//                                                            logger.info("GO: " + len);
 
                                                             bos.write(buffer, 0, len);
                                                             extractedSize += len;
@@ -238,20 +240,20 @@ public class SevenzipPlugin extends Plugin implements Observer {
                                                                 progressUpdate.put("fileName", outFile.getAbsolutePath());
 //                                                              notifyListeners("progressEvent", progressUpdate);
                                                                 call.resolve(progressUpdate);
-                                                                System.out.println("DBProgress " + totalSize + " " + progress);
+                                                                logger.info("DBProgress " + totalSize + " " + progress);
                                                                 lastProgress = progress;
                                                                 if(sleepTime>0 && progress<97)
                                                                 {
-                                                                System.out.println("inLOOP SLEEPTIME " + sleepTime);
-                                                                System.out.println("Start SLEEP: ");
+                                                                logger.info("inLOOP SLEEPTIME " + sleepTime);
+                                                                logger.info("Start SLEEP: ");
                                                                 lock.wait(sleepTime);
-                                                                System.out.println("Stop SLEEP: ");
+                                                                logger.info("Stop SLEEP: ");
                                                                 }
                                                             }
                                                         }
                                                     }
                                                 }
-                                                System.out.println("DB NAME---------------------------------------: " + outFile.getAbsolutePath());
+                                                logger.info("DB NAME---------------------------------------: " + outFile.getAbsolutePath());
                                             } else {
                                                 extractedSize += entry.getSize();
                                                 float progress = (float) ((extractedSize * 100) / totalSize);
@@ -275,7 +277,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
                                     call.release(bridge);
 
                                 } catch (Throwable e) {
-                                    System.out.println("MANUALLY CANCELED -----------------------------");
+                                    logger.info("MANUALLY CANCELED -----------------------------");
                                     callQueue.remove(call.getCallbackId());
                                     call.release(bridge);
                                     call.reject(e.getMessage());
@@ -295,7 +297,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
                 }
             } else {
                 msg = "ASSET NOT FOUND---------------------------------------: " + filePath;
-                System.out.println(msg);
+                logger.info(msg);
                 callQueue.remove(call.getCallbackId());
                 call.release(bridge);
                 call.reject(msg);
@@ -364,10 +366,10 @@ public class SevenzipPlugin extends Plugin implements Observer {
                             bis2.close();
                             fis2.close();
                             fileChannel2.close();
-                            System.out.println("Co delete file goc hay ko " + removeSrcFile);
+                            logger.info("Co delete file goc hay ko " + removeSrcFile);
 
                             if (removeSrcFile) {
-                                System.out.println("Co delete file goc hay ko " + removeSrcFile);
+                                logger.info("Co delete file goc hay ko " + removeSrcFile);
 
                                 rmSrcFile(fileUri);
                             }
@@ -418,7 +420,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
     public void setSleepTime(PluginCall call) {
         try{
             sleepTime = call.getInt("sleepTime") != null ? call.getInt("sleepTime") : sleepTime;
-            System.out.println("CURRENT SLEEPTIME " + sleepTime);
+            logger.info("CURRENT SLEEPTIME " + sleepTime);
 
             JSObject res = new JSObject();
             res.put("result", true);
@@ -445,7 +447,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
             call.resolve(res);
         }
         catch (Throwable e) {
-             System.out.println(e.getMessage());
+             logger.info(e.getMessage());
             JSObject res = new JSObject();
             res.put("result", false);
             call.resolve(res);
@@ -467,8 +469,8 @@ public class SevenzipPlugin extends Plugin implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         JSObject data = (JSObject)arg;
-        System.out.println("My Observable Data");
-        System.out.println(data.toString());
+        logger.info("My Observable Data");
+        logger.info(data.toString());
     }
 }
 // This is class being observed
