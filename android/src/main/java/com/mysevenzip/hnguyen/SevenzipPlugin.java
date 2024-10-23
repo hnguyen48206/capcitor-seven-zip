@@ -15,7 +15,7 @@ import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 //import org.apache.commons.io.IOUtils;
 
-import java.io.PrintStream;
+//import java.io.PrintStream;
 //import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -49,9 +49,9 @@ public class SevenzipPlugin extends Plugin implements Observer {
     private Object lock = new Object();
     private int lastSleep = 0;
     private int sleepTime = 100;
-    private CompletableFuture<Boolean> currentUnzippingProcess;
+//    private CompletableFuture<Boolean> currentUnzippingProcess;
     private Thread currentThread;
-    private BeingObserved notifier = new BeingObserved();
+//    private BeingObserved notifier = new BeingObserved();
 
     ArrayList<String> callQueue = new ArrayList<String>();
 
@@ -128,8 +128,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
         int nExt = ext.length();
         if (filename.length() <= nExt) return false;
         String last = filename.substring(filename.length() - nExt);
-        if (!last.equals(ext)) return false;
-        return true;
+        return last.equals(ext);
     }
 
     private boolean checkPercentInterval(float current )
@@ -164,7 +163,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
         logger.info("Document Application directory: " + documentDir);
 
         if (!isLocalAsset) {
-            if (outputDir != "" && documentDir != null) {
+            if (!Objects.equals(outputDir, "") && documentDir != null) {
                 outputDir = documentDir + outputDir;
             } else
                 outputDir = documentDir;
@@ -183,7 +182,6 @@ public class SevenzipPlugin extends Plugin implements Observer {
         logger.info("isLocalAsset---------------------------------------: " + isLocalAsset);
 
         if (isLocalAsset) {
-            String msg = "";
             //Get list of all assets
 
             InputStream inputStream = getAssetFile(context, filePath.startsWith("public/assets/")?filePath:"public/assets/" + filePath);
@@ -307,6 +305,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
                     call.reject(e.getMessage());
                 }
             } else {
+                String msg;
                 msg = "ASSET NOT FOUND---------------------------------------: " + filePath;
                 logger.info(msg);
                 callQueue.remove(call.getCallbackId());
@@ -324,7 +323,6 @@ public class SevenzipPlugin extends Plugin implements Observer {
                          BufferedInputStream bis = new BufferedInputStream(fis);
                          FileChannel fileChannel = fis.getChannel();
                          SevenZFile sevenZFile = new SevenZFile(fileChannel, password.toCharArray())) {
-//                    logger.log(Level.INFO, sevenZFile.getEntries()); ;
                         SevenZArchiveEntry entry;
                         long totalSize = 0;
                         while ((entry = sevenZFile.getNextEntry()) != null) {
@@ -397,7 +395,7 @@ public class SevenzipPlugin extends Plugin implements Observer {
                 }
             }).start();
         }
-
+//        notifier.deleteObservers();
     }
 
     @PluginMethod
