@@ -1,6 +1,6 @@
 package com.mysevenzip.hnguyen;
 
-import static java.lang.Thread.sleep;
+//import static java.lang.Thread.sleep;
 
 import android.os.Build;
 import android.os.Environment;
@@ -13,8 +13,10 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
+//import org.apache.commons.io.IOUtils;
 
 import java.io.PrintStream;
+//import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,15 +95,24 @@ public class SevenzipPlugin extends Plugin implements Observer {
         // Get the context
         this.context = this.getActivity().getApplicationContext();
         // Turn off loggging
-        System.setOut(
-                new PrintStream(new OutputStream() {
-                    public  void    close() {}
-                    public  void    flush() {}
-                    public  void    write(byte[] b) {}
-                    public  void    write(byte[] b, int off, int len) {}
-                    public  void    write(int b) {}
-                } ));
+//        System.setOut(
+//                new PrintStream(new OutputStream() {
+//                    public  void    close() {}
+//                    public  void    flush() {}
+//                    public  void    write(byte[] b) {}
+//                    public  void    write(byte[] b, int off, int len) {}
+//                    public  void    write(int b) {}
+//                } ));
         logger.setLevel(Level.OFF);
+//        try {
+//            Process proc = Runtime.getRuntime().exec("cat /proc/cpuinfo");
+//            InputStream is = proc.getInputStream();
+//            String text = IOUtils.toString(is, StandardCharsets.UTF_8.name());
+//            logger.info("------ getCpuInfo: " + text);
+//        }
+//        catch (IOException e) {
+//            logger.info("------ getCpuInfo ERROR " + e.getMessage());
+//        }
     }
 
     public String addSQLiteSuffix(String fileName) {
