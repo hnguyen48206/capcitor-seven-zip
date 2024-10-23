@@ -3,5 +3,7 @@ import type { SevenzipPlugin, SevenzipOtions, WatchProgressCallback, CallbackID,
 export declare class SevenzipWeb extends WebPlugin implements SevenzipPlugin {
     clearProgressWatch(_options: ClearWatchOptions): Promise<void>;
     getDefaultPath(): Promise<any>;
+    setSleepTime(): Promise<any>;
+    cancelUnzipping(): Promise<any>;
     unzip(_options: SevenzipOtions, _callback: WatchProgressCallback): Promise<CallbackID>;
 }

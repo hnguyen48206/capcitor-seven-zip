@@ -10,7 +10,12 @@ export class SevenzipWeb extends WebPlugin implements SevenzipPlugin {
    async getDefaultPath(): Promise<any> {
     throw new Error('Method not implemented.');
   }
-   
+  async setSleepTime(): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
+  async cancelUnzipping(): Promise<any> {
+    throw new Error('Method not implemented.');
+  }
    async unzip(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _options: SevenzipOtions,

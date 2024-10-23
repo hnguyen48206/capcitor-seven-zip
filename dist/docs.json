@@ -57,6 +57,32 @@
         "docs": "",
         "complexTypes": [],
         "slug": "getdefaultpath"
+      },
+      {
+        "name": "setSleepTime",
+        "signature": "(options: { sleepTime: number; }) => Promise<any>",
+        "parameters": [
+          {
+            "name": "options",
+            "docs": "",
+            "type": "{ sleepTime: number; }"
+          }
+        ],
+        "returns": "Promise<any>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [],
+        "slug": "setsleeptime"
+      },
+      {
+        "name": "cancelUnzipping",
+        "signature": "() => Promise<any>",
+        "parameters": [],
+        "returns": "Promise<any>",
+        "tags": [],
+        "docs": "",
+        "complexTypes": [],
+        "slug": "cancelunzipping"
       }
     ],
     "properties": []
@@ -110,6 +136,13 @@
           "docs": "",
           "complexTypes": [],
           "type": "string | undefined"
+        },
+        {
+          "name": "sleepTime",
+          "tags": [],
+          "docs": "",
+          "complexTypes": [],
+          "type": "number | undefined"
         }
       ]
     },
